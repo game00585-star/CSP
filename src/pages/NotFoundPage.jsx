@@ -1,0 +1,1 @@
+import {Link} from 'react-router-dom';export default function NotFoundPage(){return <div className="not-found"><b>404</b><h1>ไม่พบหน้าที่ต้องการ</h1><p>หน้าที่คุณกำลังค้นหาอาจถูกย้ายหรือไม่มีอยู่ในระบบ</p><Link className="btn primary" to="/dashboard">กลับไป Dashboard</Link></div>}
