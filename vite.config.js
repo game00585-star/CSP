@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    allowedHosts: ['.csb.app', '.app.github.dev'],
+    allowedHosts: true,
   },
   preview: {
     host: '0.0.0.0',
-    allowedHosts: ['.csb.app', '.app.github.dev'],
+    allowedHosts: true,
   },
   resolve: {preserveSymlinks: true},
 });
