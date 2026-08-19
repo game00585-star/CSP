@@ -11,7 +11,15 @@ export default function SearchSuggestionBridge(){
     const attach=()=>document.querySelectorAll(selector).forEach(input=>{
       const hint=`${input.placeholder||''} ${input.getAttribute('aria-label')||''}`;
       const isSearch=/ค้นหา|Barcode|รหัส|สินค้า|เอกสาร|Lot/i.test(hint);
-      if(isSearch&&!input.list&&!input.closest('.product-search'))input.setAttribute('list','csp-global-search-options');
+      if(isSearch){
+        if(/Barcode|รหัส/.test(input.placeholder||''))input.placeholder='พิมพ์ชื่อสินค้า';
+        if(input.placeholder==='เลข Lot'){
+          input.type='date';
+          const label=input.closest('label');
+          if(label?.firstChild?.nodeType===Node.TEXT_NODE)label.firstChild.nodeValue='วันที่ Lot';
+        }
+        if(input.type!=='date'&&!input.list&&!input.closest('.product-search'))input.setAttribute('list','csp-global-search-options');
+      }
     });
     attach();
     const observer=new MutationObserver(attach);
