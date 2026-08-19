@@ -12,5 +12,15 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
   },
-  resolve: {preserveSymlinks: true},
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          spreadsheet: ['xlsx'],
+        },
+      },
+    },
+  },
 });

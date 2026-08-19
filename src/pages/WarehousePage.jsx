@@ -56,8 +56,9 @@ export default function WarehousePage(){
           const currentStock=Number(cell(row,'Stock เริ่มต้น','Stock','currentStock')||0);
           const minStock=Number(cell(row,'ขั้นต่ำ','Min Stock','minStock')||0);
           const maxStock=Number(cell(row,'ขั้นสูง','Max Stock','maxStock')||100);
-          const duplicate=seen.has(barcode)||seen.has(productCode)||products.some(p=>p.barcode===barcode||p.productCode===productCode);
-          seen.add(barcode);seen.add(productCode);
+          const identity=`${productCode.toLowerCase()}|${productName.toLowerCase()}`;
+          const duplicate=seen.has(identity)||products.some(p=>p.warehouseGroup===g.id&&p.productCode.trim().toLowerCase()===productCode.toLowerCase()&&p.productName.trim().toLowerCase()===productName.toLowerCase());
+          seen.add(identity);
           const errors=[];
           if(!barcode)errors.push('ไม่มี Barcode');
           if(!productCode)errors.push('ไม่มีรหัสสินค้า');
@@ -65,7 +66,7 @@ export default function WarehousePage(){
           if(productGroup!==g.id)errors.push(`กลุ่ม ${productGroup} ไม่ตรงกับคลัง ${g.id}`);
           if(!units.includes(productUnit))errors.push('หน่วยไม่ถูกต้อง');
           if([currentStock,minStock,maxStock].some(Number.isNaN)||currentStock<0||minStock<0||maxStock<minStock)errors.push('ข้อมูล Stock ไม่ถูกต้อง');
-          if(duplicate)errors.push('Barcode หรือรหัสสินค้าซ้ำ');
+          if(duplicate)errors.push('รหัสสินค้าและชื่อสินค้านี้มีอยู่แล้วในคลัง');
           return {_row:firstDataRow+index,barcode,productCode,productName,unit:productUnit,currentStock,minStock,maxStock,note:[productType,String(cell(row,'หมายเหตุ','Note')||'')].filter(Boolean).join(' · '),errors,_valid:errors.length===0};
         }));
       }catch{
