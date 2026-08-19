@@ -12,7 +12,7 @@ const cell=(row,...names)=>names.map(name=>row[name]).find(value=>value!==undefi
 
 export default function WarehousePage(){
   const {group}=useParams(),nav=useNavigate();
-  const {products,addProduct,removeProduct,setToast}=useApp();
+  const {products,addProduct,updateProduct,removeProduct,setToast}=useApp();
   const fileInput=useRef(null);
   const [search,setSearch]=useState(''),[status,setStatus]=useState(''),[unit,setUnit]=useState('');
   const [page,setPage]=useState(1),[size,setSize]=useState(10),[editing,setEditing]=useState(null),[view,setView]=useState(null),[preview,setPreview]=useState([]),[selected,setSelected]=useState([]),[confirmDelete,setConfirmDelete]=useState(false);
@@ -50,24 +50,23 @@ export default function WarehousePage(){
           const productCode=String(cell(row,'รหัสสินค้า','Product Code','productCode')||'').trim();
           const barcode=String(cell(row,'Barcode','บาร์โค้ด')||productCode).trim();
           const productName=String(cell(row,'รายละเอียด (ไทย)','รายละเอียด','ชื่อสินค้า','Product Name','productName')||'').trim();
-          const productGroup=String(cell(row,'กลุ่ม','กลุ่มคลัง','Warehouse Group')||g.id).trim().toUpperCase();
-          const productUnit=String(cell(row,'หน่วยนับ','หน่วย','Unit','unit')||units[0]).trim();
+          const productUnit=String(cell(row,'หน่วยนับ','หน่วย','Unit','unit')||units[0]).trim()||units[0];
           const productType=String(cell(row,'ประเภท','Type')||'').trim();
-          const currentStock=Number(cell(row,'Stock เริ่มต้น','Stock','currentStock')||0);
-          const minStock=Number(cell(row,'ขั้นต่ำ','Min Stock','minStock')||0);
-          const maxStock=Number(cell(row,'ขั้นสูง','Max Stock','maxStock')||100);
+          const number=value=>Number(String(value??'').replaceAll(',','').trim()||0);
+          const currentStock=number(cell(row,'Stock เริ่มต้น','Stock','คงเหลือ','currentStock'));
+          const minStock=number(cell(row,'ขั้นต่ำ','Min Stock','minStock'));
+          const maxValue=cell(row,'ขั้นสูง','Max Stock','maxStock'),maxStock=maxValue==null||maxValue===''?100:number(maxValue);
           const identity=`${productCode.toLowerCase()}|${productName.toLowerCase()}`;
-          const duplicate=seen.has(identity)||products.some(p=>p.warehouseGroup===g.id&&p.productCode.trim().toLowerCase()===productCode.toLowerCase()&&p.productName.trim().toLowerCase()===productName.toLowerCase());
+          const existing=products.find(p=>p.warehouseGroup===g.id&&p.productCode.trim().toLowerCase()===productCode.toLowerCase()&&p.productName.trim().toLowerCase()===productName.toLowerCase());
+          const duplicateRow=seen.has(identity);
           seen.add(identity);
           const errors=[];
           if(!barcode)errors.push('ไม่มี Barcode');
           if(!productCode)errors.push('ไม่มีรหัสสินค้า');
           if(!productName)errors.push('ไม่มีชื่อสินค้า');
-          if(productGroup!==g.id)errors.push(`กลุ่ม ${productGroup} ไม่ตรงกับคลัง ${g.id}`);
-          if(!units.includes(productUnit))errors.push('หน่วยไม่ถูกต้อง');
           if([currentStock,minStock,maxStock].some(Number.isNaN)||currentStock<0||minStock<0||maxStock<minStock)errors.push('ข้อมูล Stock ไม่ถูกต้อง');
-          if(duplicate)errors.push('รหัสสินค้าและชื่อสินค้านี้มีอยู่แล้วในคลัง');
-          return {_row:firstDataRow+index,barcode,productCode,productName,unit:productUnit,currentStock,minStock,maxStock,note:[productType,String(cell(row,'หมายเหตุ','Note')||'')].filter(Boolean).join(' · '),errors,_valid:errors.length===0};
+          if(duplicateRow)errors.push('ข้อมูลซ้ำภายในไฟล์');
+          return {_row:firstDataRow+index,barcode,productCode,productName,unit:productUnit,currentStock,minStock,maxStock,note:[productType,String(cell(row,'หมายเหตุ','Note')||'')].filter(Boolean).join(' · '),existingId:existing?.id,errors,_valid:errors.length===0};
         }));
       }catch{
         setToast('ไม่สามารถอ่านไฟล์ Excel ได้ กรุณาตรวจสอบรูปแบบไฟล์');
@@ -78,9 +77,9 @@ export default function WarehousePage(){
 
   const importRows=()=>{
     const validRows=preview.filter(row=>row._valid);
-    validRows.forEach(row=>addProduct({...row,warehouseGroup:g.id}));
+    validRows.forEach(row=>row.existingId?updateProduct(row.existingId,{...products.find(product=>product.id===row.existingId),...row,currentStock:products.find(product=>product.id===row.existingId)?.currentStock??row.currentStock,warehouseGroup:g.id}):addProduct({...row,warehouseGroup:g.id}));
     setPreview([]);setPage(1);
-    setToast(`นำเข้าสินค้าเข้า ${g.name} สำเร็จ ${validRows.length} รายการ`);
+    setToast(`นำเข้าตามไฟล์เข้า ${g.name} สำเร็จ ${validRows.length} รายการ (เพิ่มใหม่ ${validRows.filter(row=>!row.existingId).length} / อัปเดตเดิม ${validRows.filter(row=>row.existingId).length})`);
   };
 
   return <>
@@ -93,6 +92,6 @@ export default function WarehousePage(){
     {editing&&<ProductForm product={editing} onClose={()=>setEditing(null)}/>}
     {view&&<Modal title="รายละเอียดสินค้า" onClose={()=>setView(null)}><div className="detail-grid">{[['Barcode',view.barcode],['รหัสสินค้า',view.productCode],['ชื่อสินค้า',view.productName],['กลุ่มคลัง',g.name],['หน่วย',view.unit],['Stock ปัจจุบัน',fmt(view.currentStock)],['ขั้นต่ำ',view.minStock],['ขั้นสูง',view.maxStock]].map(item=><div key={item[0]}><small>{item[0]}</small><b>{item[1]}</b></div>)}</div></Modal>}
     {confirmDelete&&<ConfirmModal title="ยืนยันการลบสินค้า" text={`ต้องการลบสินค้าที่เลือก ${selectedInList.length} รายการออกจากคลัง ${g.name} หรือไม่? ข้อมูล Stock Card เดิมจะยังถูกเก็บไว้`} onClose={()=>setConfirmDelete(false)} onConfirm={deleteSelected}/>}
-    {preview.length>0&&<Modal title={`ตัวอย่างข้อมูลนำเข้า · ${g.name}`} onClose={()=>setPreview([])} wide><div className="import-summary"><b>ถูกต้อง {preview.filter(row=>row._valid).length} รายการ</b><span>ผิดพลาด {preview.filter(row=>!row._valid).length} รายการ</span></div><div className="table-wrap preview"><table><thead><tr><th>แถว</th><th>Barcode / รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>Stock</th><th>ผลตรวจสอบ</th></tr></thead><tbody>{preview.map(row=><tr key={row._row}><td>{row._row}</td><td><b>{row.barcode||'—'}</b><small>{row.productCode||'—'}</small></td><td>{row.productName||'—'}</td><td>{row.unit}</td><td>{row.currentStock}</td><td>{row._valid?<span className="badge green">พร้อมนำเข้า</span>:<span className="badge red" title={row.errors.join(', ')}>{row.errors.join(', ')}</span>}</td></tr>)}</tbody></table></div><div className="modal-actions"><button className="btn ghost" onClick={()=>setPreview([])}>ยกเลิก</button><button className="btn primary" disabled={!preview.some(row=>row._valid)} onClick={importRows}>นำเข้า {preview.filter(row=>row._valid).length} รายการ</button></div></Modal>}
+    {preview.length>0&&<Modal title={`ตัวอย่างข้อมูลนำเข้า · ${g.name}`} onClose={()=>setPreview([])} wide><div className="import-summary"><b>พร้อมนำเข้า {preview.filter(row=>row._valid).length} รายการ</b><span>เพิ่มใหม่ {preview.filter(row=>row._valid&&!row.existingId).length} · อัปเดตเดิม {preview.filter(row=>row._valid&&row.existingId).length} · ผิดพลาด {preview.filter(row=>!row._valid).length}</span></div><div className="table-wrap preview"><table><thead><tr><th>แถว</th><th>Barcode / รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>Stock ในไฟล์</th><th>ผลตรวจสอบ</th></tr></thead><tbody>{preview.map(row=><tr key={row._row}><td>{row._row}</td><td><b>{row.barcode||'—'}</b><small>{row.productCode||'—'}</small></td><td>{row.productName||'—'}</td><td>{row.unit}</td><td>{row.currentStock}</td><td>{row._valid?<span className="badge green">{row.existingId?'อัปเดตข้อมูลเดิม':'เพิ่มรายการใหม่'}</span>:<span className="badge red" title={row.errors.join(', ')}>{row.errors.join(', ')}</span>}</td></tr>)}</tbody></table></div><div className="modal-actions"><button className="btn ghost" onClick={()=>setPreview([])}>ยกเลิก</button><button className="btn primary" disabled={!preview.some(row=>row._valid)} onClick={importRows}>นำเข้า {preview.filter(row=>row._valid).length} รายการ</button></div></Modal>}
   </>;
 }
