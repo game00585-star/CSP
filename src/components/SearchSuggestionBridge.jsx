@@ -4,13 +4,8 @@ import {useApp} from '../context/AppContext';
 const selector='input[type="text"], input:not([type])';
 
 export default function SearchSuggestionBridge(){
-  const {products,movements,lots,auditLogs}=useApp();
-  const options=useMemo(()=>[...new Set([
-    ...products.flatMap(product=>[product.barcode,product.productCode,product.productName,`${product.productCode} · ${product.productName}`]),
-    ...movements.flatMap(movement=>[movement.documentNo,movement.productCode,movement.productName,movement.lotNo]),
-    ...lots.flatMap(lot=>[lot.lotNo,`${lot.lotNo} · ${lot.productName}`]),
-    ...auditLogs.flatMap(log=>[log.documentNo,log.productCode,log.productName,log.reason,log.requestedBy]),
-  ].filter(Boolean).map(String))].slice(0,500),[products,movements,lots,auditLogs]);
+  const {products}=useApp();
+  const options=useMemo(()=>[...new Set(products.map(product=>product.productName).filter(Boolean).map(String))].slice(0,500),[products]);
 
   useEffect(()=>{
     const attach=()=>document.querySelectorAll(selector).forEach(input=>{

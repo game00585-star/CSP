@@ -17,7 +17,7 @@ export default function TransactionPage({type}){
   const [group,setGroup]=useState('RM'),[dest,setDest]=useState('FG-CUT'),[supplier,setSupplier]=useState('บริษัท ซัพพลายเออร์ จำกัด');
   const [ref,setRef]=useState(''),[remark,setRemark]=useState(''),[items,setItems]=useState([]),[productId,setProductId]=useState(''),[productSearch,setProductSearch]=useState('');
   const [confirm,setConfirm]=useState(false),[error,setError]=useState(''),[printDocument,setPrintDocument]=useState(null),[showResults,setShowResults]=useState(false);
-  const available=useMemo(()=>products.filter(product=>product.warehouseGroup===group&&product.active&&!items.some(item=>item.id===product.id)&&(!productSearch||`${product.barcode} ${product.productCode} ${product.productName}`.toLowerCase().includes(productSearch.toLowerCase()))),[products,group,items,productSearch]);
+  const available=useMemo(()=>products.filter(product=>product.warehouseGroup===group&&product.active&&!items.some(item=>item.id===product.id)&&(!productSearch||product.productName.toLowerCase().includes(productSearch.toLowerCase()))),[products,group,items,productSearch]);
   const productLots=id=>lots.filter(lot=>lot.productId===id&&lot.warehouseGroup===group&&lot.quantityRemaining>0).sort((a,b)=>a.receivedDate.localeCompare(b.receivedDate));
   const add=()=>{const product=available.find(item=>item.id===productId);if(!product){setError('กรุณาเลือกสินค้าที่ต้องการเพิ่ม');return}const firstLot=productLots(product.id)[0];setItems(current=>[...current,{...product,qty:1,price:0,lotNo:'',lotId:firstLot?.id||''}]);setProductId('');setProductSearch('');setError('')};
   const update=(id,key,value)=>setItems(current=>current.map(item=>item.id===id?{...item,[key]:['qty','price'].includes(key)?+value:value}:item));
