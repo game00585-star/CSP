@@ -18,7 +18,7 @@ const excelValue=(product,column,index)=>{
   if(column==='รหัสสินค้า')return product.productCode;
   if(column==='ชื่อสินค้า')return product.productName;
   if(column==='จำนวนสินค้าคงเหลือ')return fmt(product.currentStock);
-  if(column==='จำนวนกระสอบ/ลัง')return +product.packSize>0?(Number(product.currentStock||0)/Number(product.packSize)).toLocaleString('th-TH',{maximumFractionDigits:4}):'—';
+  if(column==='จำนวนกระสอบ/ลัง'){const sourceDivisor=String(product.excelRow?.[4]??'').replaceAll(',','').match(/\d+(?:\.\d+)?/),divisor=Number(product.packSize||sourceDivisor?.[0]||0);return divisor>0?(Number(product.currentStock||0)/divisor).toLocaleString('th-TH',{maximumFractionDigits:4}):'—'}
   if(column==='MIN')return fmt(product.minStock);
   if(column==='MAX')return fmt(product.maxStock);
   const value=product.excelRow?.[index];
