@@ -1,5 +1,6 @@
 import json
 import math
+import re
 import sys
 from datetime import date, datetime
 from pathlib import Path
@@ -20,7 +21,8 @@ def number(value):
         value = float(value)
         return value if math.isfinite(value) else 0
     except (TypeError, ValueError):
-        return 0
+        match = re.search(r"-?\d+(?:\.\d+)?", text(value).replace(",", ""))
+        return float(match.group()) if match else 0
 
 
 def unit(value):
@@ -76,7 +78,7 @@ pk_products = extract(sys.argv[2], "PK")
 payload = (
     "// Generated from the approved PK.xlsx and IN.xlsx source files.\n"
     "// Product identity intentionally includes both productCode and productName so duplicate codes remain separate.\n"
-    f"export const pkInCatalogVersion='2026-08-20-pk-in-v2';\n"
+    f"export const pkInCatalogVersion='2026-08-20-pk-in-v3';\n"
     f"export const pkProducts={json.dumps(pk_products, ensure_ascii=False, separators=(',', ':'))};\n"
     f"export const inProducts={json.dumps(in_products, ensure_ascii=False, separators=(',', ':'))};\n"
     "export const pkInCatalogProducts=[...pkProducts,...inProducts];\n"

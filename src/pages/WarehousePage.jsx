@@ -18,6 +18,7 @@ const excelValue=(product,column,index)=>{
   if(column==='รหัสสินค้า')return product.productCode;
   if(column==='ชื่อสินค้า')return product.productName;
   if(column==='จำนวนสินค้าคงเหลือ')return fmt(product.currentStock);
+  if(column==='จำนวนกระสอบ/ลัง')return +product.packSize>0?(Number(product.currentStock||0)/Number(product.packSize)).toLocaleString('th-TH',{maximumFractionDigits:4}):'—';
   if(column==='MIN')return fmt(product.minStock);
   if(column==='MAX')return fmt(product.maxStock);
   const value=product.excelRow?.[index];
@@ -67,7 +68,8 @@ export default function WarehousePage(){
           const productName=String(cell(row,'รายละเอียด (ไทย)','รายละเอียด','ชื่อสินค้า','Product Name','productName')||'').trim();
           const productUnit=String(cell(row,'หน่วยนับ','หน่วย','Unit','unit')||units[0]).trim()||units[0];
           const productType=String(cell(row,'ประเภท','Type')||'').trim();
-          const number=value=>Number(String(value??'').replaceAll(',','').trim()||0);
+          const number=value=>{const match=String(value??'').replaceAll(',','').match(/-?\d+(?:\.\d+)?/);return match?Number(match[0]):0};
+          const packSize=number(cell(row,'กก./กระสอบ','กก./กระสอบ/ลัง/ถุง'));
           const currentStock=number(cell(row,'Stock เริ่มต้น','Stock','คงเหลือ','จำนวนสินค้าคงเหลือ','currentStock'));
           const minStock=number(cell(row,'ขั้นต่ำ','MIN','Min Stock','minStock'));
           const maxValue=cell(row,'ขั้นสูง','MAX','Max Stock','maxStock'),maxStock=maxValue==null||maxValue===''?100:number(maxValue);
@@ -82,7 +84,7 @@ export default function WarehousePage(){
           if([currentStock,minStock,maxStock].some(Number.isNaN)||currentStock<0||minStock<0||maxStock<minStock)errors.push('ข้อมูล Stock ไม่ถูกต้อง');
           if(duplicateRow)errors.push('ข้อมูลซ้ำภายในไฟล์');
           const excelRow=(excelColumns[g.id]||[]).map(header=>cell(row,header)??'');
-          return {_row:firstDataRow+index,barcode,productCode,productName,unit:productUnit,currentStock,minStock,maxStock,excelRow,note:[productType,String(cell(row,'หมายเหตุ','Note','Comment')||'')].filter(Boolean).join(' · '),existingId:existing?.id,errors,_valid:errors.length===0};
+          return {_row:firstDataRow+index,barcode,productCode,productName,unit:productUnit,packSize,currentStock,minStock,maxStock,excelRow,note:[productType,String(cell(row,'หมายเหตุ','Note','Comment')||'')].filter(Boolean).join(' · '),existingId:existing?.id,errors,_valid:errors.length===0};
         }));
       }catch{
         setToast('ไม่สามารถอ่านไฟล์ Excel ได้ กรุณาตรวจสอบรูปแบบไฟล์');
