@@ -17,7 +17,7 @@ export default function WarehousePage(){
   const [search,setSearch]=useState(''),[status,setStatus]=useState(''),[unit,setUnit]=useState('');
   const [page,setPage]=useState(1),[size,setSize]=useState(10),[editing,setEditing]=useState(null),[view,setView]=useState(null),[preview,setPreview]=useState([]),[selected,setSelected]=useState([]),[confirmDelete,setConfirmDelete]=useState(false);
   const g=warehouseGroups.find(item=>item.path===group)||warehouseGroups[0];
-  const list=useMemo(()=>products.filter(p=>p.warehouseGroup===g.id&&(!search||p.productName.toLowerCase().includes(search.toLowerCase()))&&(!status||stockStatus(p)===status)&&(!unit||p.unit===unit)),[products,g.id,search,status,unit]);
+  const list=useMemo(()=>products.filter(p=>p.warehouseGroup===g.id&&(!search||`${p.productName} ${p.productCode}`.toLowerCase().includes(search.toLowerCase()))&&(!status||stockStatus(p)===status)&&(!unit||p.unit===unit)),[products,g.id,search,status,unit]);
   const stats={stock:list.reduce((sum,p)=>sum+p.currentStock,0),low:list.filter(p=>stockStatus(p)==='ใกล้หมด').length,out:list.filter(p=>p.currentStock===0).length};
   const selectedInList=selected.filter(id=>list.some(product=>product.id===id));
   const allSelected=list.length>0&&list.every(product=>selected.includes(product.id));

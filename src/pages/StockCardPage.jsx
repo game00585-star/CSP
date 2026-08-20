@@ -10,7 +10,7 @@ const normalizeLotDate=value=>{const text=String(value||'').trim();if(/^\d{4}-\d
 
 export default function StockCardPage(){
   const {products,movements,lots}=useApp(),[params]=useSearchParams();
-  const [product,setProduct]=useState(params.get('product')||''),[productSearch,setProductSearch]=useState(''),[lotSearch,setLotSearch]=useState(''),[group,setGroup]=useState(''),[type,setType]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[order,setOrder]=useState('desc');
+  const [product,setProduct]=useState(params.get('product')||''),[productSearch,setProductSearch]=useState(params.get('location')||''),[lotSearch,setLotSearch]=useState(''),[group,setGroup]=useState(params.get('group')||''),[type,setType]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[order,setOrder]=useState('desc');
   const filteredProducts=useMemo(()=>products.filter(item=>!productSearch||`${item.productName} ${item.productCode} ${item.barcode}`.toLowerCase().includes(productSearch.toLowerCase())),[products,productSearch]);
   const selected=products.find(item=>item.id===product);
   const movementBalances=useMemo(()=>{const balances={},result={};[...movements].sort((a,b)=>`${a.transactionDate||''} ${a.transactionTime||''} ${a.createdAt||''}`.localeCompare(`${b.transactionDate||''} ${b.transactionTime||''} ${b.createdAt||''}`)).forEach(movement=>{const before=balances[movement.productId]||0,after=before+(+movement.quantityIn||0)-(+movement.quantityOut||0);balances[movement.productId]=after;result[movement.id]=after});return result},[movements]);

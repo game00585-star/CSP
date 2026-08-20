@@ -8,7 +8,7 @@ import {PageHeader,ExportButton,StatusBadge,Empty,Modal} from '../components/com
 const reports=['Stock คงเหลือ','รายการรับสินค้า','รายการจ่ายสินค้า','รายการโอนคลัง','รายการเคลื่อนไหว'];
 const emptyFilters={from:'',to:'',group:'',lotDate:'',search:''};
 const movementTypes={1:['RECEIVE'],2:['ISSUE'],3:['TRANSFER_OUT'],4:null};
-const includesSearch=(item,search)=>!search||`${item.productName||''} ${item.transactionDate||''} ${item.receiveDate||''} ${item.issueDate||''} ${item.lotNo||''} ${item.lotSummary||''}`.toLowerCase().includes(search.toLowerCase());
+const includesSearch=(item,search)=>!search||`${item.productName||''} ${item.productCode||''} ${item.transactionDate||''} ${item.receiveDate||''} ${item.issueDate||''} ${item.lotNo||''} ${item.lotSummary||''}`.toLowerCase().includes(search.toLowerCase());
 const includesMovementSearch=(item,search)=>!search||`${item.productName||''} ${item.productCode||''} ${item.transactionDate||''} ${item.receiveDate||''} ${item.issueDate||''}`.toLowerCase().includes(search.toLowerCase());
 const inDateRange=(date,from,to)=>(!from||date>=from)&&(!to||date<=to);
 const normalizeLotDate=value=>{const text=String(value||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(text))return text;const match=text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);return match?`${match[3]}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}`:''};
@@ -53,7 +53,7 @@ export default function ReportsPage(){
       <label>วันที่สิ้นสุด<input type="date" value={draft.to} onChange={event=>change('to',event.target.value)}/></label>
       <label>กลุ่มคลัง<select value={draft.group} onChange={event=>change('group',event.target.value)}><option value="">ทุกคลัง</option>{warehouseGroups.map(group=><option value={group.id} key={group.id}>{group.name}</option>)}</select></label>
       {tab!==4&&<label>วันที่ Lot<input type="date" value={draft.lotDate} onChange={event=>change('lotDate',event.target.value)}/></label>}
-      <label>ค้นหาชื่อสินค้า<input value={draft.search} onChange={event=>change('search',event.target.value)} onKeyDown={event=>event.key==='Enter'&&search()} placeholder="พิมพ์ชื่อสินค้า"/></label>
+      <label>ค้นหาชื่อหรือรหัสสินค้า<input value={draft.search} onChange={event=>change('search',event.target.value)} onKeyDown={event=>event.key==='Enter'&&search()} placeholder="พิมพ์ชื่อหรือรหัสสินค้า"/></label>
       <button className="btn primary" onClick={search}>ค้นหา</button><button className="btn ghost" onClick={clear}>ล้างค่า</button>
       {error&&<div className="alert full">{error}</div>}
     </div>
