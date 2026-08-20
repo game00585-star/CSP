@@ -1,0 +1,41 @@
+.map-assign-floating {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 18;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 10px;
+  padding: 13px 18px;
+  color: #fff;
+  background: #2563eb;
+  box-shadow: 0 12px 28px #1d4ed850;
+  font-weight: 700;
+}
+
+.map-assign-floating svg { width: 18px; }
+.header-name-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; max-height: 58vh; overflow-y: auto; padding: 2px; }
+.header-name-grid label { display: flex; flex-direction: column; gap: 5px; color: #526175; font-size: 11px; font-weight: 700; }
+.header-name-grid small { color: #8a96a6; font-weight: 400; }
+.product-form-note { padding: 11px 13px; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; background: #eff6ff; font-size: 11px; }
+.product-detail-form { max-height: 72vh; overflow-y: auto; padding-right: 5px; }
+
+.map-product-tray { margin-bottom: 15px; padding: 16px; border-color: #93c5fd; background: linear-gradient(120deg,#eff6ff,#fff); }
+.map-product-tray>div:first-child { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #1d4ed8; }
+.map-product-tray>div:first-child svg { width: 24px; }
+.map-product-tray b,.map-product-tray small { display: block; }
+.map-product-tray small { margin-top: 3px; color: #718096; font-size: 10px; }
+.map-product-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.map-product-chips>div { min-width: 240px; display: flex; align-items: center; gap: 8px; border: 1px solid #bfdbfe; border-radius: 8px; padding: 9px; background: #fff; cursor: grab; }
+.map-product-chips>div:active { cursor: grabbing; }
+.map-product-chips>div>svg { width: 16px; color: #64748b; }
+.map-product-chips span { flex: 1; min-width: 0; }
+.map-product-chips b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.map-product-chips button { border: 0; border-radius: 5px; padding: 4px; display: grid; color: #dc2626; background: #fef2f2; }
+.map-product-chips button svg { width: 14px; }
+.assigned-products-count { margin-top: 5px; border-radius: 9px; padding: 2px 6px; color: #1d4ed8; background: #dbeafe; font-size: 8px; }
+.storage-cell.drag-over { outline: 3px solid #60a5fa; outline-offset: 2px; }
+
+@media(max-width:700px){.header-name-grid{grid-template-columns:1fr}.map-assign-floating{right:14px;bottom:14px;left:14px;justify-content:center}}
