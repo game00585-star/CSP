@@ -9,7 +9,7 @@ const titles={dashboard:'Dashboard','warehouse-periods':'รอบเดือ�
 
 export default function Layout(){
   const [collapsed,setCollapsed]=useState(false),[mobile,setMobile]=useState(false),[wareOpen,setWareOpen]=useState(true),[userOpen,setUserOpen]=useState(false);
-  const nav=useNavigate(),loc=useLocation(),{toast,activePeriod}=useApp(),locked=!activePeriod;
+  const nav=useNavigate(),loc=useLocation(),{toast,activePeriod,viewingPeriod}=useApp(),currentPeriod=activePeriod||viewingPeriod,locked=!currentPeriod;
   useEffect(()=>{if(locked&&loc.pathname!=='/warehouse-periods')nav('/warehouse-periods',{replace:true})},[locked,loc.pathname,nav]);
   const logout=()=>{localStorage.removeItem('csp_auth');nav('/login')},title=titles[loc.pathname.split('/')[1]]||'CSP Warehouse';
   const visibleMenu=locked?menu.filter(([to])=>to==='/warehouse-periods'):menu;
