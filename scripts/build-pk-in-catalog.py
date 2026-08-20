@@ -1,6 +1,7 @@
 import json
 import math
 import sys
+from datetime import date, datetime
 from pathlib import Path
 
 import openpyxl
@@ -25,6 +26,16 @@ def number(value):
 def unit(value):
     value = text(value)
     return {"กก.": "กิโลกรัม", "กก": "กิโลกรัม"}.get(value, value or "หน่วย")
+
+
+def cell_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
 
 
 def extract(path, warehouse):
@@ -52,6 +63,7 @@ def extract(path, warehouse):
                 "note": text(row[-1] if row else None),
                 "sourceFile": Path(path).name,
                 "sourceRow": row_number,
+                "excelRow": [cell_value(value) for value in row],
                 "createdAt": "2026-08-20T00:00:00",
                 "updatedAt": "2026-08-20T00:00:00",
             }
@@ -64,7 +76,7 @@ pk_products = extract(sys.argv[2], "PK")
 payload = (
     "// Generated from the approved PK.xlsx and IN.xlsx source files.\n"
     "// Product identity intentionally includes both productCode and productName so duplicate codes remain separate.\n"
-    f"export const pkInCatalogVersion='2026-08-20-pk-in-v1';\n"
+    f"export const pkInCatalogVersion='2026-08-20-pk-in-v2';\n"
     f"export const pkProducts={json.dumps(pk_products, ensure_ascii=False, separators=(',', ':'))};\n"
     f"export const inProducts={json.dumps(in_products, ensure_ascii=False, separators=(',', ':'))};\n"
     "export const pkInCatalogProducts=[...pkProducts,...inProducts];\n"

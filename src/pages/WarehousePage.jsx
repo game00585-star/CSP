@@ -7,8 +7,22 @@ import {warehouseGroups,units} from '../data/constants';
 import {fmt,stockStatus} from '../utils/helpers';
 import {PageHeader,StatCard,Toolbar,StatusBadge,ExportButton,Pagination,Empty,Modal,ConfirmModal} from '../components/common';
 import ProductForm from './ProductForm';
+import './warehouseExcel.css';
 
 const cell=(row,...names)=>names.map(name=>row[name]).find(value=>value!==undefined&&value!==null&&value!=='');
+const excelColumns={
+  PK:['ลำดับ','รหัสสินค้า','ยอดยกมาเดือน 7/69','ชื่อสินค้า','กก./กระสอบ','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Remark','วันผลิต','วันหมดอายุ','วันหมดอายุที่เหลือ\n(UP DATE )','IN','OUT','MIN','MAX','Comment'],
+  IN:['ลำดับ','รหัสสินค้า','ยอดยกมาเดือน 7/69','ชื่อสินค้า','กก./กระสอบ/ลัง/ถุง','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Allergen/Non Allergen','Remark','sheif life','LOT วันที่รับเข้า','วันผลิต','วันหมดอายุ','วันหมดอายุที่เหลือ\n(UP DATE )','IN','OUT','MIN','MAX','Comment']
+};
+const excelValue=(product,column,index)=>{
+  if(column==='รหัสสินค้า')return product.productCode;
+  if(column==='ชื่อสินค้า')return product.productName;
+  if(column==='จำนวนสินค้าคงเหลือ')return fmt(product.currentStock);
+  if(column==='MIN')return fmt(product.minStock);
+  if(column==='MAX')return fmt(product.maxStock);
+  const value=product.excelRow?.[index];
+  return value===undefined||value===null||value===''?'—':typeof value==='number'?fmt(value):String(value);
+};
 
 export default function WarehousePage(){
   const {group}=useParams(),nav=useNavigate();
@@ -17,6 +31,7 @@ export default function WarehousePage(){
   const [search,setSearch]=useState(''),[status,setStatus]=useState(''),[unit,setUnit]=useState('');
   const [page,setPage]=useState(1),[size,setSize]=useState(10),[editing,setEditing]=useState(null),[view,setView]=useState(null),[preview,setPreview]=useState([]),[selected,setSelected]=useState([]),[confirmDelete,setConfirmDelete]=useState(false);
   const g=warehouseGroups.find(item=>item.path===group)||warehouseGroups[0];
+  const sourceColumns=excelColumns[g.id]||null;
   const list=useMemo(()=>products.filter(p=>p.warehouseGroup===g.id&&(!search||`${p.productName} ${p.productCode}`.toLowerCase().includes(search.toLowerCase()))&&(!status||stockStatus(p)===status)&&(!unit||p.unit===unit)),[products,g.id,search,status,unit]);
   const stats={stock:list.reduce((sum,p)=>sum+p.currentStock,0),low:list.filter(p=>stockStatus(p)==='ใกล้หมด').length,out:list.filter(p=>p.currentStock===0).length};
   const selectedInList=selected.filter(id=>list.some(product=>product.id===id));
@@ -35,7 +50,7 @@ export default function WarehousePage(){
         const workbook=XLSX.read(result.target.result,{type:'array'});
         const sheet=workbook.Sheets[workbook.SheetNames[0]];
         const rawRows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false});
-        const headerIndex=rawRows.findIndex(row=>row.some(value=>String(value).trim()==='รหัสสินค้า')&&row.some(value=>String(value).trim().includes('รายละเอียด')));
+        const headerIndex=rawRows.findIndex(row=>row.some(value=>String(value).trim()==='รหัสสินค้า')&&row.some(value=>['รายละเอียด (ไทย)','รายละเอียด','ชื่อสินค้า'].includes(String(value).trim())));
         let firstDataRow=2;
         let rows;
         if(headerIndex>=0){
@@ -53,9 +68,9 @@ export default function WarehousePage(){
           const productUnit=String(cell(row,'หน่วยนับ','หน่วย','Unit','unit')||units[0]).trim()||units[0];
           const productType=String(cell(row,'ประเภท','Type')||'').trim();
           const number=value=>Number(String(value??'').replaceAll(',','').trim()||0);
-          const currentStock=number(cell(row,'Stock เริ่มต้น','Stock','คงเหลือ','currentStock'));
-          const minStock=number(cell(row,'ขั้นต่ำ','Min Stock','minStock'));
-          const maxValue=cell(row,'ขั้นสูง','Max Stock','maxStock'),maxStock=maxValue==null||maxValue===''?100:number(maxValue);
+          const currentStock=number(cell(row,'Stock เริ่มต้น','Stock','คงเหลือ','จำนวนสินค้าคงเหลือ','currentStock'));
+          const minStock=number(cell(row,'ขั้นต่ำ','MIN','Min Stock','minStock'));
+          const maxValue=cell(row,'ขั้นสูง','MAX','Max Stock','maxStock'),maxStock=maxValue==null||maxValue===''?100:number(maxValue);
           const identity=`${productCode.toLowerCase()}|${productName.toLowerCase()}`;
           const existing=products.find(p=>p.warehouseGroup===g.id&&p.productCode.trim().toLowerCase()===productCode.toLowerCase()&&p.productName.trim().toLowerCase()===productName.toLowerCase());
           const duplicateRow=seen.has(identity);
@@ -66,7 +81,8 @@ export default function WarehousePage(){
           if(!productName)errors.push('ไม่มีชื่อสินค้า');
           if([currentStock,minStock,maxStock].some(Number.isNaN)||currentStock<0||minStock<0||maxStock<minStock)errors.push('ข้อมูล Stock ไม่ถูกต้อง');
           if(duplicateRow)errors.push('ข้อมูลซ้ำภายในไฟล์');
-          return {_row:firstDataRow+index,barcode,productCode,productName,unit:productUnit,currentStock,minStock,maxStock,note:[productType,String(cell(row,'หมายเหตุ','Note')||'')].filter(Boolean).join(' · '),existingId:existing?.id,errors,_valid:errors.length===0};
+          const excelRow=(excelColumns[g.id]||[]).map(header=>cell(row,header)??'');
+          return {_row:firstDataRow+index,barcode,productCode,productName,unit:productUnit,currentStock,minStock,maxStock,excelRow,note:[productType,String(cell(row,'หมายเหตุ','Note','Comment')||'')].filter(Boolean).join(' · '),existingId:existing?.id,errors,_valid:errors.length===0};
         }));
       }catch{
         setToast('ไม่สามารถอ่านไฟล์ Excel ได้ กรุณาตรวจสอบรูปแบบไฟล์');
@@ -86,7 +102,7 @@ export default function WarehousePage(){
     <PageHeader title={`คลังสินค้า · ${g.name}`} subtitle="ตรวจสอบยอดคงเหลือและสถานะสินค้า" actions={<><button className="btn ghost" onClick={()=>nav(`/warehouse-map/${g.path}`)}><MapPinned/> แผนที่จุดเก็บ</button><input ref={fileInput} hidden type="file" accept=".xlsx,.xls" onChange={readExcel}/><button className="btn secondary" onClick={()=>fileInput.current?.click()}><Upload/> Import Excel</button><button className="btn primary" onClick={()=>setEditing({warehouseGroup:g.id})}><Plus/> เพิ่มสินค้า</button></>}/>
     <div className="stats-grid compact"><StatCard icon={Boxes} label="จำนวนรายการ" value={list.length} unit="สินค้า"/><StatCard icon={PackageCheck} label="Stock คงเหลือ" value={fmt(stats.stock)} unit="หน่วย" color="green"/><StatCard icon={TriangleAlert} label="ใกล้หมด" value={stats.low} unit="รายการ" color="orange"/><StatCard icon={PackageX} label="หมด" value={stats.out} unit="รายการ" color="red"/></div>
     <div className="card"><Toolbar search={search} setSearch={setSearch}><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">ทุกสถานะ</option><option>ปกติ</option><option>ใกล้หมด</option><option>หมด</option></select><select value={unit} onChange={e=>setUnit(e.target.value)}><option value="">ทุกหน่วย</option>{units.map(item=><option key={item}>{item}</option>)}</select><button className="btn ghost" onClick={()=>{setSearch('');setStatus('');setUnit('')}}>ล้างตัวกรอง</button>{selectedInList.length>0&&<button className="btn danger-btn" onClick={()=>setConfirmDelete(true)}><Trash2/> ลบที่เลือก ({selectedInList.length})</button>}<ExportButton rows={list} name={`CSP-stock-${g.path}`}/></Toolbar>
-      <div className="table-wrap"><table><thead><tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={`เลือกสินค้าทั้งหมดในคลัง ${g.name}`}/></th><th>#</th><th>Barcode / รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>คงเหลือ</th><th>ต่ำสุด / สูงสุด</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>{list.slice((page-1)*size,page*size).map((p,index)=><tr key={p.id} className={selected.includes(p.id)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggleOne(p.id)} aria-label={`เลือก ${p.productName}`}/></td><td>{(page-1)*size+index+1}</td><td><b>{p.barcode}</b><small>{p.productCode}</small></td><td>{p.productName}</td><td>{p.unit}</td><td className="num">{fmt(p.currentStock)}</td><td>{p.minStock} / {p.maxStock}</td><td><StatusBadge status={stockStatus(p)}/></td><td><div className="row-actions"><button onClick={()=>setView(p)} title="ดู"><Eye/></button><button onClick={()=>setEditing(p)} title="แก้ไข"><Pencil/></button><button onClick={()=>nav(`/stock-card?product=${p.id}`)} title="Stock Card"><ScrollText/></button></div></td></tr>)}</tbody></table>{!list.length&&<Empty/>}</div>
+      <div className={`table-wrap ${sourceColumns?'excel-source-table':''}`}><table><thead>{sourceColumns?<tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={`เลือกสินค้าทั้งหมดในคลัง ${g.name}`}/></th>{sourceColumns.map(column=><th key={column}>{column}</th>)}<th>จัดการ</th></tr>:<tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={`เลือกสินค้าทั้งหมดในคลัง ${g.name}`}/></th><th>#</th><th>Barcode / รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>คงเหลือ</th><th>ต่ำสุด / สูงสุด</th><th>สถานะ</th><th>จัดการ</th></tr>}</thead><tbody>{list.slice((page-1)*size,page*size).map((p,index)=>sourceColumns?<tr key={p.id} className={selected.includes(p.id)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggleOne(p.id)} aria-label={`เลือก ${p.productName}`}/></td>{sourceColumns.map((column,columnIndex)=><td key={column} className={['ยอดยกมาเดือน 7/69','กก./กระสอบ','กก./กระสอบ/ลัง/ถุง','จำนวนสินค้าคงเหลือ','จำนวนกระสอบ/ลัง','IN','OUT','MIN','MAX'].includes(column)?'num':''}>{column==='ลำดับ'?(page-1)*size+index+1:excelValue(p,column,columnIndex)}</td>)}<td><div className="row-actions"><button onClick={()=>setView(p)} title="ดู"><Eye/></button><button onClick={()=>setEditing(p)} title="แก้ไข"><Pencil/></button><button onClick={()=>nav(`/stock-card?product=${p.id}`)} title="Stock Card"><ScrollText/></button></div></td></tr>:<tr key={p.id} className={selected.includes(p.id)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggleOne(p.id)} aria-label={`เลือก ${p.productName}`}/></td><td>{(page-1)*size+index+1}</td><td><b>{p.barcode}</b><small>{p.productCode}</small></td><td>{p.productName}</td><td>{p.unit}</td><td className="num">{fmt(p.currentStock)}</td><td>{p.minStock} / {p.maxStock}</td><td><StatusBadge status={stockStatus(p)}/></td><td><div className="row-actions"><button onClick={()=>setView(p)} title="ดู"><Eye/></button><button onClick={()=>setEditing(p)} title="แก้ไข"><Pencil/></button><button onClick={()=>nav(`/stock-card?product=${p.id}`)} title="Stock Card"><ScrollText/></button></div></td></tr>)}</tbody></table>{!list.length&&<Empty/>}</div>
       <Pagination page={page} setPage={setPage} total={list.length} size={size} setSize={setSize}/>
     </div>
     {editing&&<ProductForm product={editing} onClose={()=>setEditing(null)}/>}
