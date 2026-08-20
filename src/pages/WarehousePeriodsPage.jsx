@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {CalendarDays,CheckCircle2,LockKeyhole,Plus,TriangleAlert} from 'lucide-react';
 import {useApp} from '../context/AppContext';
 import {PageHeader,ConfirmModal,Empty} from '../components/common';
@@ -7,8 +8,9 @@ const monthLabel=value=>{if(!value)return '—';const [year,month]=value.split('
 
 export default function WarehousePeriodsPage(){
   const {warehousePeriods,activePeriod,createWarehousePeriod,closeWarehousePeriod,setToast}=useApp();
+  const navigate=useNavigate();
   const [month,setMonth]=useState(new Date().toISOString().slice(0,7)),[closing,setClosing]=useState(null);
-  const create=()=>{try{createWarehousePeriod(month)}catch(error){setToast(error.message)}};
+  const create=()=>{try{createWarehousePeriod(month);navigate('/dashboard')}catch(error){setToast(error.message)}};
   return <>
     <PageHeader title="รอบเดือนคลัง" subtitle="เปิดรอบเดือนก่อนรับเข้า จ่ายออก โอน และนับสต็อก"/>
     {activePeriod?<section className="period-current card"><div className="period-icon"><CalendarDays/></div><div><small>รอบเดือนที่กำลังใช้งาน</small><h2>{monthLabel(activePeriod.month)}</h2><p>รายการคลังทั้งหมดต้องลงวันที่ภายในเดือน {activePeriod.month}</p></div><span className="period-open"><CheckCircle2/> เปิดใช้งาน</span><button className="btn danger-btn" onClick={()=>setClosing(activePeriod)}><LockKeyhole/> ปิดรอบเดือน</button></section>:<section className="period-create card"><div className="period-icon"><Plus/></div><div><h2>สร้างรอบเดือนคลัง</h2><p>เมื่อสร้างแล้ว เดือนนี้จะถูกใช้กับรายการคลังทั้งหมดจนกว่าจะปิดรอบ</p></div><label>เดือนที่ต้องการเปิด<input type="month" value={month} onChange={event=>setMonth(event.target.value)}/></label><button className="btn primary" onClick={create}><CalendarDays/> สร้างและเปิดใช้งาน</button></section>}
