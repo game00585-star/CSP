@@ -27,7 +27,7 @@ export default function MovementLedgerPage(){
       const locationMap=new Map();
       lots.filter(lot=>lot.productId===row.productId&&lot.warehouseGroup===currentWarehouse&&Number(lot.quantityRemaining)>0).forEach(lot=>{const key=lot.locationId||lot.locationName||'unassigned',current=locationMap.get(key)||{id:lot.locationId||'',name:lot.locationName||'ยังไม่ระบุจุดจัดเก็บ',quantity:0};current.quantity+=Number(lot.quantityRemaining||0);locationMap.set(key,current)});
       const locations=[...locationMap.values()];
-      if(!locations.length&&(row.locationName||product.defaultLocationName))locations.push({id:row.locationId||product.defaultLocationId||'',name:row.locationName||product.defaultLocationName,quantity:Number(row.openingBalance||0)});
+      if(!locations.length&&(product.defaultLocationName||row.locationName))locations.push({id:product.defaultLocationId||row.locationId||'',name:product.defaultLocationName||row.locationName,quantity:Number(row.openingBalance||0)});
       const afterClose=movements.filter(item=>item.productId===row.productId&&item.warehouseGroup===currentWarehouse&&String(item.createdAt||'')>closure.closedAt&&item.transactionType!=='OPENING_BALANCE');
       const incoming=afterClose.reduce((sum,item)=>sum+Number(item.quantityIn||0),0),outgoing=afterClose.reduce((sum,item)=>sum+Number(item.quantityOut||0),0);
       return{...row,
