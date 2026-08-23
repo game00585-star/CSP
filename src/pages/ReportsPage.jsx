@@ -5,7 +5,7 @@ import {warehouseGroups,movementLabels} from '../data/constants';
 import {stockStatus,fmt,printHtml} from '../utils/helpers';
 import {PageHeader,ExportButton,StatusBadge,Empty,Modal} from '../components/common';
 
-const reports=['Stock คงเหลือ','รายการรับสินค้า','รายการจ่ายสินค้า','รายการโอนคลัง','รายการเคลื่อนไหว'];
+const reports=['Stock คงเหลือ','รายการรับสินค้า','รายการจ่ายสินค้า','รายการโอนคลัง'];
 const emptyFilters={from:'',to:'',group:'',lotDate:'',search:''};
 const movementTypes={1:['RECEIVE'],2:['ISSUE'],3:['TRANSFER_OUT'],4:null};
 const includesSearch=(item,search)=>!search||`${item.productName||''} ${item.productCode||''} ${item.transactionDate||''} ${item.receiveDate||''} ${item.issueDate||''} ${item.lotNo||''} ${item.lotSummary||''}`.toLowerCase().includes(search.toLowerCase());
