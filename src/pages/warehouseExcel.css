@@ -121,8 +121,7 @@
 .opening-balance-table td:nth-child(12) { width: 125px; }
 .opening-balance-table th:nth-child(13),
 .opening-balance-table td:nth-child(13) {
-  width: 140px;
-  white-space: normal;
+  width: 125px;
 }
 
 .opening-balance-table th {
@@ -134,9 +133,6 @@
 .opening-balance-table td {
   font-size: 13px;
 }
-
-.opening-balance-table th:nth-child(14),
-.opening-balance-table td:nth-child(14) { width: 125px; }
 
 .flow-edit-button {
   display: inline-flex;
@@ -157,6 +153,8 @@
 .btn.finish-opening { color: white; border-color: #15803d; background: #15803d; }
 .btn.finish-opening:hover { background: #166534; }
 .btn.completed-opening { color: #166534; border-color: #bbf7d0; background: #dcfce7; }
+.btn.reopen-opening { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+.btn.reopen-opening:hover { background: #fef3c7; }
 .finalize-opening-form { display: grid; justify-items: center; gap: 12px; text-align: center; }
 .finalize-opening-icon { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 18px; color: #15803d; background: #dcfce7; }
 .finalize-opening-icon svg { width: 31px; height: 31px; }
