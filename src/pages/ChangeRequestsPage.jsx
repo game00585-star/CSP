@@ -2,8 +2,8 @@ import {useMemo,useState} from 'react';
 import {Check,Clock3,Eye,FilePenLine,ImageOff,ShieldCheck,X} from 'lucide-react';
 import {useApp} from '../context/AppContext';
 import {PageHeader,Empty,ExportButton,Modal} from '../components/common';
-const statusLabel={PENDING:'รออนุมัติ',APPROVED:'อนุมัติแล้ว',REJECTED:'ไม่อนุมัติ'};
-const actionLabel={EDIT:'แก้ไขจำนวน',DELETE:'ลบรายการ',OPENING_ADJUSTMENT:'แก้ไข IN/OUT ยอดยกมา'};
+const statusLabel={PENDING:'รออนุมัติ',APPROVED:'อนุมัติแล้ว',REJECTED:'ไม่อนุมัติ',COMPLETED:'เสร็จสิ้น'};
+const actionLabel={EDIT:'แก้ไขจำนวน',DELETE:'ลบรายการ',OPENING_ADJUSTMENT:'แก้ไขยอดยกมา/IN/OUT',OPENING_FINALIZED:'จบยอดยกมา',STOCK_COUNT:'ตรวจนับสต็อก'};
 export default function ChangeRequestsPage(){
  const {auditLogs,currentUser,approveChange,rejectChange}=useApp();const [search,setSearch]=useState(''),[status,setStatus]=useState(''),[viewing,setViewing]=useState(null);
  const rows=useMemo(()=>auditLogs.filter(log=>{const currentStatus=log.status||'APPROVED';return(!status||currentStatus===status)&&(!search||`${log.createdAt||''} ${log.approvedAt||''} ${log.documentNo} ${log.productCode} ${log.productName} ${log.reason} ${log.requestedBy||''} ${log.approvedBy||''} ${log.sourceMenu||''} ${log.direction||''}`.toLowerCase().includes(search.toLowerCase()))}),[auditLogs,search,status]);
