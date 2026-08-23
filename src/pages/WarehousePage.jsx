@@ -17,33 +17,41 @@ const excelColumns={
 };
 const openingBalanceColumns=['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','IN','OUT','กลุ่มสินค้า','Remark'];
 const readHeaderNames=()=>{try{return JSON.parse(localStorage.getItem('csp_warehouse_table_headers'))||{}}catch{return{}}};
+const displayDate=value=>{if(!value)return 'ไม่ระบุ';const [year,month,day]=String(value).slice(0,10).split('-');return year&&month&&day?`${day}/${month}/${Number(year)+543}`:String(value)};
 export default function WarehousePage(){
   const {group}=useParams(),nav=useNavigate();
-  const {products,movements,activePeriod,viewingPeriod,addProduct,updateProduct,removeProduct,setToast}=useApp();
+  const {products,movements,stockCounts,activePeriod,viewingPeriod,addProduct,updateProduct,removeProduct,setToast}=useApp();
   const fileInput=useRef(null);
   const [search,setSearch]=useState(''),[status,setStatus]=useState(''),[unit,setUnit]=useState('');
   const [page,setPage]=useState(1),[size,setSize]=useState(10),[editing,setEditing]=useState(null),[view,setView]=useState(null),[preview,setPreview]=useState([]),[selected,setSelected]=useState([]),[confirmDelete,setConfirmDelete]=useState(false),[headerNames,setHeaderNames]=useState(readHeaderNames),[editingHeaders,setEditingHeaders]=useState(null);
   const g=warehouseGroups.find(item=>item.path===group)||warehouseGroups[0];
   const sourceColumns=excelColumns[g.id]||null;
   const tableColumns=openingBalanceColumns;
-  const displayHeader=(column,index)=>column==='ยอดยกมา'?'ยอดยกมา':headerNames[g.id]?.[index]||column;
   const sourceValue=(product,column)=>{const index=sourceColumns?.indexOf(column)??-1;return index>=0?product.excelRow?.[index]:undefined};
   const periodMonth=(activePeriod||viewingPeriod)?.month;
-  const movementValue=(product,direction)=>movements.filter(item=>item.productId===product.id&&item.transactionType!=='OPENING_BALANCE'&&(!periodMonth||item.periodMonth===periodMonth||String(item.transactionDate||'').startsWith(periodMonth))).reduce((sum,item)=>sum+Number(direction==='IN'?item.quantityIn:item.quantityOut||0),0);
+  const openingSnapshot=product=>{const counted=stockCounts.flatMap(session=>(session.lines||[]).filter(line=>line.productId===product.id).map(line=>({...line,countDate:session.countDate,documentNo:session.documentNo}))).sort((a,b)=>String(b.countedAt||b.countDate).localeCompare(String(a.countedAt||a.countDate)))[0];return counted?{quantity:Number(counted.countedQuantity||0),date:counted.countDate||String(counted.countedAt).slice(0,10),documentNo:counted.documentNo,source:`นับสต็อก ${counted.documentNo}`,fromCount:true}:{quantity:Number(product.openingBalance??product.excelRow?.[2]??product.currentStock??0),date:product.openingBalanceDate||String(product.createdAt||'').slice(0,10),documentNo:null,source:product.openingBalanceSource||product.sourceFile||'ข้อมูลเดิม',fromCount:false}};
+  const movementValue=(product,direction,snapshot)=>movements.filter(item=>item.productId===product.id&&item.transactionType!=='OPENING_BALANCE'&&item.documentNo!==snapshot.documentNo&&(!snapshot.date||String(item.transactionDate||'')>=snapshot.date)&&(!periodMonth||item.periodMonth===periodMonth||String(item.transactionDate||'').startsWith(periodMonth))).reduce((sum,item)=>sum+Number(direction==='IN'?item.quantityIn:item.quantityOut||0),0);
+  const flowValue=(product,direction)=>{const snapshot=openingSnapshot(product),systemValue=movementValue(product,direction,snapshot),importedValue=snapshot.fromCount?0:Number(String(sourceValue(product,direction)||0).replaceAll(',',''))||0;return systemValue+importedValue};
+  const calculatedBalance=product=>{const snapshot=openingSnapshot(product);return snapshot.quantity+flowValue(product,'IN')-flowValue(product,'OUT')};
   const openingTableValue=(product,column)=>{
     if(column==='รหัสสินค้า')return product.productCode;
-    if(column==='ยอดยกมา')return fmt(product.openingBalance??product.excelRow?.[2]??product.currentStock);
+    if(column==='ยอดยกมา')return fmt(openingSnapshot(product).quantity);
     if(column==='ชื่อสินค้า')return product.productName;
     if(column==='กก./กระสอบ')return sourceValue(product,'กก./กระสอบ')??sourceValue(product,'กก./กระสอบ/ลัง/ถุง')??product.packSize??'—';
-    if(column==='จำนวนสินค้าคงเหลือ')return fmt(product.currentStock);
+    if(column==='จำนวนสินค้าคงเหลือ')return fmt(calculatedBalance(product));
     if(column==='หน่วย')return sourceValue(product,'หน่วย')||product.unit||'—';
-    if(column==='จำนวนกระสอบ/ลัง'){const raw=product.packSize||sourceValue(product,'กก./กระสอบ')||sourceValue(product,'กก./กระสอบ/ลัง/ถุง')||0,match=String(raw).replaceAll(',','').match(/\d+(?:\.\d+)?/),divisor=Number(match?.[0]||0);return divisor>0?(Number(product.currentStock||0)/divisor).toLocaleString('th-TH',{maximumFractionDigits:4}):'—'}
-    if(column==='IN'||column==='OUT'){const systemValue=movementValue(product,column),importedValue=Number(String(sourceValue(product,column)||0).replaceAll(',',''))||0;return fmt(systemValue||importedValue)}
+    if(column==='จำนวนกระสอบ/ลัง'){const raw=product.packSize||sourceValue(product,'กก./กระสอบ')||sourceValue(product,'กก./กระสอบ/ลัง/ถุง')||0,match=String(raw).replaceAll(',','').match(/\d+(?:\.\d+)?/),divisor=Number(match?.[0]||0);return divisor>0?(calculatedBalance(product)/divisor).toLocaleString('th-TH',{maximumFractionDigits:4}):'—'}
+    if(column==='IN'||column==='OUT')return fmt(flowValue(product,column));
     if(column==='กลุ่มสินค้า')return sourceValue(product,'กลุ่มสินค้า')||product.warehouseGroup||'—';
     if(column==='Remark')return sourceValue(product,'Remark')||product.note||'—';
     return '—';
   };
   const list=useMemo(()=>products.filter(p=>p.warehouseGroup===g.id&&(!search||`${p.productName} ${p.productCode}`.toLowerCase().includes(search.toLowerCase()))&&(!status||stockStatus(p)===status)&&(!unit||p.unit===unit)),[products,g.id,search,status,unit]);
+  const referenceDate=list.map(product=>openingSnapshot(product).date).filter(Boolean).sort().at(-1)||new Date().toISOString().slice(0,10);
+  const importedStockHeader=list.find(product=>product.stockBalanceLabel)?.stockBalanceLabel;
+  const hasCountSnapshot=list.some(product=>openingSnapshot(product).fromCount);
+  const stockBalanceHeader=!hasCountSnapshot&&importedStockHeader?importedStockHeader:`จำนวนสินค้าคงเหลือ ณ วันที่ ${displayDate(referenceDate)}`;
+  const displayHeader=(column,index)=>column==='ยอดยกมา'?`ยอดยกมา ณ วันที่ ${displayDate(referenceDate)}`:column==='จำนวนสินค้าคงเหลือ'?stockBalanceHeader:headerNames[g.id]?.[index]||column;
   const stats={stock:list.reduce((sum,p)=>sum+p.currentStock,0),low:list.filter(p=>stockStatus(p)==='ใกล้หมด').length,out:list.filter(p=>p.currentStock===0).length};
   const selectedInList=selected.filter(id=>list.some(product=>product.id===id));
   const allSelected=list.length>0&&list.every(product=>selected.includes(product.id));
@@ -65,10 +73,12 @@ export default function WarehousePage(){
         const sheet=workbook.Sheets[workbook.SheetNames[0]];
         const rawRows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false});
         const headerIndex=rawRows.findIndex(row=>row.some(value=>String(value).trim()==='รหัสสินค้า')&&row.some(value=>['รายละเอียด (ไทย)','รายละเอียด','ชื่อสินค้า'].includes(String(value).trim())));
-        let firstDataRow=2;
+        let firstDataRow=2,openingHeader='ยอดยกมา',stockHeader='จำนวนสินค้าคงเหลือ';
         let rows;
         if(headerIndex>=0){
           const headers=rawRows[headerIndex].map(value=>String(value).trim());
+          openingHeader=headers.find(header=>header.includes('ยอดยกมา'))||openingHeader;
+          stockHeader=headers.find(header=>header.includes('จำนวนสินค้าคงเหลือ')||header.includes('คงเหลือ'))||stockHeader;
           firstDataRow=headerIndex+2;
           rows=rawRows.slice(headerIndex+1).filter(row=>row.some(value=>String(value).trim())).map(row=>Object.fromEntries(headers.map((header,index)=>[header,row[index]??''])));
         }else{
@@ -99,7 +109,7 @@ export default function WarehousePage(){
           if([currentStock,minStock,maxStock].some(Number.isNaN)||currentStock<0||minStock<0||maxStock<minStock)errors.push('ข้อมูล Stock ไม่ถูกต้อง');
           if(duplicateRow)errors.push('ข้อมูลซ้ำภายในไฟล์');
           const excelRow=(excelColumns[g.id]||[]).map(header=>header==='จำนวนกระสอบ/ลัง'?'':header==='ยอดยกมา'?openingBalance:cell(row,header)??'');
-          return {_row:sourceRow,sourceFile:file.name,sourceRow,barcode,productCode,productName,unit:productUnit,packSize,openingBalance,currentStock,minStock,maxStock,excelRow,note:[productType,String(cell(row,'หมายเหตุ','Note','Comment')||'')].filter(Boolean).join(' · '),existingId:existing?.id,errors,_valid:errors.length===0};
+          return {_row:sourceRow,sourceFile:file.name,sourceRow,barcode,productCode,productName,unit:productUnit,packSize,openingBalance,openingBalanceDate:new Date(file.lastModified||Date.now()).toISOString().slice(0,10),openingBalanceSource:`Import ${file.name}`,openingBalanceLabel:openingHeader,stockBalanceLabel:stockHeader,currentStock,minStock,maxStock,excelRow,note:[productType,String(cell(row,'หมายเหตุ','Note','Comment')||'')].filter(Boolean).join(' · '),existingId:existing?.id,errors,_valid:errors.length===0};
         }));
       }catch{
         setToast('ไม่สามารถอ่านไฟล์ Excel ได้ กรุณาตรวจสอบรูปแบบไฟล์');
