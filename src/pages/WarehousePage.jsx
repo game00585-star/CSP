@@ -15,11 +15,11 @@ const excelColumns={
   PK:['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Remark','วันผลิต','วันหมดอายุ','วันหมดอายุที่เหลือ\n(UP DATE )','IN','OUT','MIN','MAX','Comment'],
   IN:['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ/ลัง/ถุง','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Allergen/Non Allergen','Remark','sheif life','LOT วันที่รับเข้า','วันผลิต','วันหมดอายุ','วันหมดอายุที่เหลือ\n(UP DATE )','IN','OUT','MIN','MAX','Comment']
 };
-const openingBalanceColumns=['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Remark'];
+const openingBalanceColumns=['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','IN','OUT','กลุ่มสินค้า','Remark'];
 const readHeaderNames=()=>{try{return JSON.parse(localStorage.getItem('csp_warehouse_table_headers'))||{}}catch{return{}}};
 export default function WarehousePage(){
   const {group}=useParams(),nav=useNavigate();
-  const {products,addProduct,updateProduct,removeProduct,setToast}=useApp();
+  const {products,movements,activePeriod,viewingPeriod,addProduct,updateProduct,removeProduct,setToast}=useApp();
   const fileInput=useRef(null);
   const [search,setSearch]=useState(''),[status,setStatus]=useState(''),[unit,setUnit]=useState('');
   const [page,setPage]=useState(1),[size,setSize]=useState(10),[editing,setEditing]=useState(null),[view,setView]=useState(null),[preview,setPreview]=useState([]),[selected,setSelected]=useState([]),[confirmDelete,setConfirmDelete]=useState(false),[headerNames,setHeaderNames]=useState(readHeaderNames),[editingHeaders,setEditingHeaders]=useState(null);
@@ -28,6 +28,8 @@ export default function WarehousePage(){
   const tableColumns=openingBalanceColumns;
   const displayHeader=(column,index)=>column==='ยอดยกมา'?'ยอดยกมา':headerNames[g.id]?.[index]||column;
   const sourceValue=(product,column)=>{const index=sourceColumns?.indexOf(column)??-1;return index>=0?product.excelRow?.[index]:undefined};
+  const periodMonth=(activePeriod||viewingPeriod)?.month;
+  const movementValue=(product,direction)=>movements.filter(item=>item.productId===product.id&&item.transactionType!=='OPENING_BALANCE'&&(!periodMonth||item.periodMonth===periodMonth||String(item.transactionDate||'').startsWith(periodMonth))).reduce((sum,item)=>sum+Number(direction==='IN'?item.quantityIn:item.quantityOut||0),0);
   const openingTableValue=(product,column)=>{
     if(column==='รหัสสินค้า')return product.productCode;
     if(column==='ยอดยกมา')return fmt(product.openingBalance??product.excelRow?.[2]??product.currentStock);
@@ -36,6 +38,7 @@ export default function WarehousePage(){
     if(column==='จำนวนสินค้าคงเหลือ')return fmt(product.currentStock);
     if(column==='หน่วย')return sourceValue(product,'หน่วย')||product.unit||'—';
     if(column==='จำนวนกระสอบ/ลัง'){const raw=product.packSize||sourceValue(product,'กก./กระสอบ')||sourceValue(product,'กก./กระสอบ/ลัง/ถุง')||0,match=String(raw).replaceAll(',','').match(/\d+(?:\.\d+)?/),divisor=Number(match?.[0]||0);return divisor>0?(Number(product.currentStock||0)/divisor).toLocaleString('th-TH',{maximumFractionDigits:4}):'—'}
+    if(column==='IN'||column==='OUT'){const systemValue=movementValue(product,column),importedValue=Number(String(sourceValue(product,column)||0).replaceAll(',',''))||0;return fmt(systemValue||importedValue)}
     if(column==='กลุ่มสินค้า')return sourceValue(product,'กลุ่มสินค้า')||product.warehouseGroup||'—';
     if(column==='Remark')return sourceValue(product,'Remark')||product.note||'—';
     return '—';

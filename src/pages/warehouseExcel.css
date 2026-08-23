@@ -83,7 +83,7 @@
 }
 
 .opening-balance-table table {
-  min-width: 1320px;
+  min-width: 1500px;
   table-layout: fixed;
 }
 
@@ -110,9 +110,16 @@
 .opening-balance-table th:nth-child(9),
 .opening-balance-table td:nth-child(9) { width: 130px; }
 .opening-balance-table th:nth-child(10),
-.opening-balance-table td:nth-child(10) { width: 125px; }
+.opening-balance-table td:nth-child(10),
 .opening-balance-table th:nth-child(11),
 .opening-balance-table td:nth-child(11) {
+  width: 90px;
+  font-weight: 700;
+}
+.opening-balance-table th:nth-child(12),
+.opening-balance-table td:nth-child(12) { width: 125px; }
+.opening-balance-table th:nth-child(13),
+.opening-balance-table td:nth-child(13) {
   width: 140px;
   white-space: normal;
 }
