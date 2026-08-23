@@ -1,11 +1,11 @@
 import {useMemo,useRef,useState} from 'react';
 import {useNavigate,useParams} from 'react-router-dom';
 import * as XLSX from 'xlsx';
-import {Boxes,PackageCheck,TriangleAlert,PackageX,Plus,Pencil,Eye,ScrollText,Upload,Trash2,MapPinned,TableProperties,Save} from 'lucide-react';
+import {Boxes,PackageCheck,TriangleAlert,PackageX,Plus,Upload,Trash2,MapPinned,TableProperties,Save} from 'lucide-react';
 import {useApp} from '../context/AppContext';
 import {warehouseGroups,units} from '../data/constants';
 import {fmt,stockStatus} from '../utils/helpers';
-import {PageHeader,StatCard,Toolbar,StatusBadge,ExportButton,Pagination,Empty,Modal,ConfirmModal} from '../components/common';
+import {PageHeader,StatCard,Toolbar,ExportButton,Pagination,Empty,Modal,ConfirmModal} from '../components/common';
 import ProductForm from './ProductForm';
 import './warehouseExcel.css';
 import './warehouseEnhancements.css';
@@ -15,20 +15,8 @@ const excelColumns={
   PK:['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Remark','วันผลิต','วันหมดอายุ','วันหมดอายุที่เหลือ\n(UP DATE )','IN','OUT','MIN','MAX','Comment'],
   IN:['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ/ลัง/ถุง','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Allergen/Non Allergen','Remark','sheif life','LOT วันที่รับเข้า','วันผลิต','วันหมดอายุ','วันหมดอายุที่เหลือ\n(UP DATE )','IN','OUT','MIN','MAX','Comment']
 };
-const generalColumns=['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','หน่วย','คงเหลือ','ต่ำสุด / สูงสุด','สถานะ','แผนที่จุดเก็บ'];
+const openingBalanceColumns=['ลำดับ','รหัสสินค้า','ยอดยกมา','ชื่อสินค้า','กก./กระสอบ','จำนวนสินค้าคงเหลือ','หน่วย','จำนวนกระสอบ/ลัง','กลุ่มสินค้า','Remark'];
 const readHeaderNames=()=>{try{return JSON.parse(localStorage.getItem('csp_warehouse_table_headers'))||{}}catch{return{}}};
-const excelValue=(product,column,index)=>{
-  if(column==='รหัสสินค้า')return product.productCode;
-  if(column==='ชื่อสินค้า')return product.productName;
-  if(column==='ยอดยกมา')return fmt(product.openingBalance??product.excelRow?.[2]??product.currentStock);
-  if(column==='จำนวนสินค้าคงเหลือ')return fmt(product.currentStock);
-  if(column==='จำนวนกระสอบ/ลัง'){const sourceDivisor=String(product.excelRow?.[4]??'').replaceAll(',','').match(/\d+(?:\.\d+)?/),divisor=Number(product.packSize||sourceDivisor?.[0]||0);return divisor>0?(Number(product.currentStock||0)/divisor).toLocaleString('th-TH',{maximumFractionDigits:4}):'—'}
-  if(column==='MIN')return fmt(product.minStock);
-  if(column==='MAX')return fmt(product.maxStock);
-  const value=product.excelRow?.[index];
-  return value===undefined||value===null||value===''?'—':typeof value==='number'?fmt(value):String(value);
-};
-
 export default function WarehousePage(){
   const {group}=useParams(),nav=useNavigate();
   const {products,addProduct,updateProduct,removeProduct,setToast}=useApp();
@@ -37,8 +25,21 @@ export default function WarehousePage(){
   const [page,setPage]=useState(1),[size,setSize]=useState(10),[editing,setEditing]=useState(null),[view,setView]=useState(null),[preview,setPreview]=useState([]),[selected,setSelected]=useState([]),[confirmDelete,setConfirmDelete]=useState(false),[headerNames,setHeaderNames]=useState(readHeaderNames),[editingHeaders,setEditingHeaders]=useState(null);
   const g=warehouseGroups.find(item=>item.path===group)||warehouseGroups[0];
   const sourceColumns=excelColumns[g.id]||null;
-  const tableColumns=sourceColumns?[...sourceColumns,'แผนที่จุดเก็บ']:generalColumns;
-  const displayHeader=(column,index)=>headerNames[g.id]?.[index]||column;
+  const tableColumns=openingBalanceColumns;
+  const displayHeader=(column,index)=>column==='ยอดยกมา'?'ยอดยกมา':headerNames[g.id]?.[index]||column;
+  const sourceValue=(product,column)=>{const index=sourceColumns?.indexOf(column)??-1;return index>=0?product.excelRow?.[index]:undefined};
+  const openingTableValue=(product,column)=>{
+    if(column==='รหัสสินค้า')return product.productCode;
+    if(column==='ยอดยกมา')return fmt(product.openingBalance??product.excelRow?.[2]??product.currentStock);
+    if(column==='ชื่อสินค้า')return product.productName;
+    if(column==='กก./กระสอบ')return sourceValue(product,'กก./กระสอบ')??sourceValue(product,'กก./กระสอบ/ลัง/ถุง')??product.packSize??'—';
+    if(column==='จำนวนสินค้าคงเหลือ')return fmt(product.currentStock);
+    if(column==='หน่วย')return sourceValue(product,'หน่วย')||product.unit||'—';
+    if(column==='จำนวนกระสอบ/ลัง'){const raw=product.packSize||sourceValue(product,'กก./กระสอบ')||sourceValue(product,'กก./กระสอบ/ลัง/ถุง')||0,match=String(raw).replaceAll(',','').match(/\d+(?:\.\d+)?/),divisor=Number(match?.[0]||0);return divisor>0?(Number(product.currentStock||0)/divisor).toLocaleString('th-TH',{maximumFractionDigits:4}):'—'}
+    if(column==='กลุ่มสินค้า')return sourceValue(product,'กลุ่มสินค้า')||product.warehouseGroup||'—';
+    if(column==='Remark')return sourceValue(product,'Remark')||product.note||'—';
+    return '—';
+  };
   const list=useMemo(()=>products.filter(p=>p.warehouseGroup===g.id&&(!search||`${p.productName} ${p.productCode}`.toLowerCase().includes(search.toLowerCase()))&&(!status||stockStatus(p)===status)&&(!unit||p.unit===unit)),[products,g.id,search,status,unit]);
   const stats={stock:list.reduce((sum,p)=>sum+p.currentStock,0),low:list.filter(p=>stockStatus(p)==='ใกล้หมด').length,out:list.filter(p=>p.currentStock===0).length};
   const selectedInList=selected.filter(id=>list.some(product=>product.id===id));
@@ -115,7 +116,7 @@ export default function WarehousePage(){
     <PageHeader title={`ยอดยกมา · ${g.name}`} subtitle="ตรวจสอบยอดยกมา ยอดคงเหลือ และสถานะสินค้า" actions={<><button className="btn ghost" onClick={openHeaderEditor}><TableProperties/> แก้ไขชื่อหัวตาราง</button><button className="btn ghost" onClick={()=>nav(`/warehouse-map/${g.path}`)}><MapPinned/> แผนที่จุดเก็บ</button><input ref={fileInput} hidden type="file" accept=".xlsx,.xls" onChange={readExcel}/><button className="btn secondary" onClick={()=>fileInput.current?.click()}><Upload/> Import Excel</button><button className="btn primary" onClick={()=>setEditing({warehouseGroup:g.id,excelRow:sourceColumns?.map(()=>''),unit:'กิโลกรัม',openingBalance:0,currentStock:0,minStock:0,maxStock:100})}><Plus/> เพิ่มสินค้า</button></>}/>
     <div className="stats-grid compact"><StatCard icon={Boxes} label="จำนวนรายการ" value={list.length} unit="สินค้า"/><StatCard icon={PackageCheck} label="Stock คงเหลือ" value={fmt(stats.stock)} unit="หน่วย" color="green"/><StatCard icon={TriangleAlert} label="ใกล้หมด" value={stats.low} unit="รายการ" color="orange"/><StatCard icon={PackageX} label="หมด" value={stats.out} unit="รายการ" color="red"/></div>
     <div className="card"><Toolbar search={search} setSearch={setSearch}><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">ทุกสถานะ</option><option>ปกติ</option><option>ใกล้หมด</option><option>หมด</option></select><select value={unit} onChange={e=>setUnit(e.target.value)}><option value="">ทุกหน่วย</option>{units.map(item=><option key={item}>{item}</option>)}</select><button className="btn ghost" onClick={()=>{setSearch('');setStatus('');setUnit('')}}>ล้างตัวกรอง</button>{selectedInList.length>0&&<button className="btn danger-btn" onClick={()=>setConfirmDelete(true)}><Trash2/> ลบที่เลือก ({selectedInList.length})</button>}<ExportButton rows={list} name={`CSP-stock-${g.path}`}/></Toolbar>
-      <div className={`table-wrap ${sourceColumns?'excel-source-table':''}`}><table><thead>{sourceColumns?<tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={`เลือกสินค้าทั้งหมดในคลัง ${g.name}`}/></th>{sourceColumns.map((column,index)=><th key={column}>{displayHeader(column,index)}</th>)}<th>{displayHeader('แผนที่จุดเก็บ',sourceColumns.length)}</th><th>จัดการ</th></tr>:<tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={`เลือกสินค้าทั้งหมดในคลัง ${g.name}`}/></th>{generalColumns.map((column,index)=><th key={column}>{displayHeader(column,index)}</th>)}<th>จัดการ</th></tr>}</thead><tbody>{list.slice((page-1)*size,page*size).map((p,index)=>sourceColumns?<tr key={p.id} className={selected.includes(p.id)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggleOne(p.id)} aria-label={`เลือก ${p.productName}`}/></td>{sourceColumns.map((column,columnIndex)=><td key={column} className={['ยอดยกมา','กก./กระสอบ','กก./กระสอบ/ลัง/ถุง','จำนวนสินค้าคงเหลือ','จำนวนกระสอบ/ลัง','IN','OUT','MIN','MAX'].includes(column)?'num':''}>{column==='ลำดับ'?(page-1)*size+index+1:excelValue(p,column,columnIndex)}</td>)}<td><span className={p.defaultLocationName?'badge green':'badge orange'}>{p.defaultLocationName||'ยังไม่จัดเก็บ'}</span></td><td><div className="row-actions"><button onClick={()=>setView(p)} title="ดู"><Eye/></button><button onClick={()=>setEditing(p)} title="แก้ไข"><Pencil/></button><button onClick={()=>nav(`/stock-card?product=${p.id}`)} title="Stock Card"><ScrollText/></button></div></td></tr>:<tr key={p.id} className={selected.includes(p.id)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggleOne(p.id)} aria-label={`เลือก ${p.productName}`}/></td><td>{(page-1)*size+index+1}</td><td>{p.productCode}</td><td className="num">{fmt(p.openingBalance??p.currentStock)}</td><td>{p.productName}</td><td>{p.unit}</td><td className="num">{fmt(p.currentStock)}</td><td>{p.minStock} / {p.maxStock}</td><td><StatusBadge status={stockStatus(p)}/></td><td><span className={p.defaultLocationName?'badge green':'badge orange'}>{p.defaultLocationName||'ยังไม่จัดเก็บ'}</span></td><td><div className="row-actions"><button onClick={()=>setView(p)} title="ดู"><Eye/></button><button onClick={()=>setEditing(p)} title="แก้ไข"><Pencil/></button><button onClick={()=>nav(`/stock-card?product=${p.id}`)} title="Stock Card"><ScrollText/></button></div></td></tr>)}</tbody></table>{!list.length&&<Empty/>}</div>
+      <div className="table-wrap opening-balance-table"><table><thead><tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label={`เลือกสินค้าทั้งหมดในคลัง ${g.name}`}/></th>{openingBalanceColumns.map((column,index)=><th key={column}>{displayHeader(column,index)}</th>)}</tr></thead><tbody>{list.slice((page-1)*size,page*size).map((p,index)=><tr key={p.id} className={selected.includes(p.id)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(p.id)} onChange={()=>toggleOne(p.id)} aria-label={`เลือก ${p.productName}`}/></td>{openingBalanceColumns.map(column=><td key={column} className={['ยอดยกมา','กก./กระสอบ','จำนวนสินค้าคงเหลือ','จำนวนกระสอบ/ลัง'].includes(column)?'num':''}>{column==='ลำดับ'?(page-1)*size+index+1:openingTableValue(p,column)}</td>)}</tr>)}</tbody></table>{!list.length&&<Empty/>}</div>
       <Pagination page={page} setPage={setPage} total={list.length} size={size} setSize={setSize}/>
     </div>
     {editing&&<ProductForm product={editing} columns={excelColumns[editing.warehouseGroup]||sourceColumns} onClose={()=>setEditing(null)}/>}

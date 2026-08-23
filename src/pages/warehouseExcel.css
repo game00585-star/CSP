@@ -82,6 +82,41 @@
   padding: 9px 12px;
 }
 
+.opening-balance-table table {
+  min-width: 1320px;
+  table-layout: fixed;
+}
+
+.opening-balance-table th:nth-child(1),
+.opening-balance-table td:nth-child(1) { width: 44px; }
+.opening-balance-table th:nth-child(2),
+.opening-balance-table td:nth-child(2) { width: 70px; }
+.opening-balance-table th:nth-child(3),
+.opening-balance-table td:nth-child(3) { width: 145px; }
+.opening-balance-table th:nth-child(4),
+.opening-balance-table td:nth-child(4) { width: 130px; }
+.opening-balance-table th:nth-child(5),
+.opening-balance-table td:nth-child(5) {
+  width: 300px;
+  white-space: normal;
+  line-height: 1.45;
+}
+.opening-balance-table th:nth-child(6),
+.opening-balance-table td:nth-child(6) { width: 110px; }
+.opening-balance-table th:nth-child(7),
+.opening-balance-table td:nth-child(7) { width: 150px; }
+.opening-balance-table th:nth-child(8),
+.opening-balance-table td:nth-child(8) { width: 80px; }
+.opening-balance-table th:nth-child(9),
+.opening-balance-table td:nth-child(9) { width: 130px; }
+.opening-balance-table th:nth-child(10),
+.opening-balance-table td:nth-child(10) { width: 125px; }
+.opening-balance-table th:nth-child(11),
+.opening-balance-table td:nth-child(11) {
+  width: 140px;
+  white-space: normal;
+}
+
 .excel-source-table tbody tr:hover td {
   background: #f8fbff;
 }
