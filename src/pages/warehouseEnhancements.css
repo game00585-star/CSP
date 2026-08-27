@@ -58,6 +58,8 @@
 .map-remove-list .btn { flex: 0 0 auto; }
 .map-remove-empty { padding: 28px; text-align: center; color: #94a3b8; background: #f8fafc; border-radius: 9px; }
 @media(max-width:640px){.map-remove-select-all{align-items:flex-start;flex-direction:column}.map-remove-list>div:not(.map-remove-empty){align-items:flex-start;flex-wrap:wrap}.map-remove-list span{flex-basis:calc(100% - 34px)}.map-remove-list .btn{margin-left:29px}}
+.stock-card-lot-actions { display: flex; align-items: center; gap: 8px; }
+.stock-card-lot-actions .btn svg { width: 16px; }
 .click-to-assign { margin-top: 5px; border-radius: 8px; padding: 3px 7px; color: #fff; background: #2563eb; font-size: 8px; font-weight: 700; }
 
 @media(max-width:700px){.header-name-grid{grid-template-columns:1fr}.map-assign-floating{right:14px;bottom:14px;left:14px;justify-content:center}}
