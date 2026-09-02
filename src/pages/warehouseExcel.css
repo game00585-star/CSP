@@ -198,22 +198,31 @@
 .ledger-not-ready svg { width: 48px; height: 48px; color: #94a3b8; }
 .ledger-not-ready h3,.ledger-not-ready p { margin: 0; }
 .ledger-not-ready p { color: #64748b; }
-.movement-ledger-table table { width: 100%; min-width: 2850px; table-layout: auto; }
-.movement-ledger-table th,.movement-ledger-table td { padding: 13px 14px; }
-.movement-ledger-table th { background: #f4f7fb; }
-.movement-ledger-table th:nth-child(1) { width: 70px; }
-.movement-ledger-table th:nth-child(2) { width: 150px; }
-.movement-ledger-table th:nth-child(3) { min-width: 280px; }
-.movement-ledger-table th:nth-child(6) { min-width: 300px; }
-.movement-ledger-table th:nth-child(8),.movement-ledger-table th:nth-child(9),.movement-ledger-table th:nth-child(17) { min-width: 150px; }
-.movement-ledger-table th:nth-child(10),.movement-ledger-table th:nth-child(11),.movement-ledger-table th:nth-child(12) { min-width: 135px; }
+.movement-ledger-table table { width: 100%; min-width: 1500px; table-layout: fixed; }
+.movement-ledger-table th,.movement-ledger-table td { box-sizing: border-box; padding: 10px 9px; vertical-align: middle; }
+.movement-ledger-table th { overflow: hidden; background: #f4f7fb; font-size: 11.5px; line-height: 1.35; text-align: left; white-space: normal; }
+.movement-ledger-table td { overflow: hidden; font-size: 12.5px; line-height: 1.4; text-overflow: ellipsis; }
+.movement-ledger-table th:nth-child(1),.movement-ledger-table td:nth-child(1) { width: 42px; text-align: center; }
+.movement-ledger-table th:nth-child(2),.movement-ledger-table td:nth-child(2) { width: 60px; text-align: center; }
+.movement-ledger-table th:nth-child(3),.movement-ledger-table td:nth-child(3) { width: 130px; }
+.movement-ledger-table th:nth-child(4),.movement-ledger-table td:nth-child(4) { width: 105px; }
+.movement-ledger-table th:nth-child(5),.movement-ledger-table td:nth-child(5) { width: 320px; white-space: normal; }
+.movement-ledger-table th:nth-child(6),.movement-ledger-table td:nth-child(6) { width: 105px; }
+.movement-ledger-table th:nth-child(7),.movement-ledger-table td:nth-child(7) { width: 150px; }
+.movement-ledger-table th:nth-child(8),.movement-ledger-table td:nth-child(8) { width: 75px; }
+.movement-ledger-table th:nth-child(9),.movement-ledger-table td:nth-child(9) { width: 120px; }
+.movement-ledger-table th:nth-child(10),.movement-ledger-table td:nth-child(10),
+.movement-ledger-table th:nth-child(11),.movement-ledger-table td:nth-child(11) { width: 70px; }
+.movement-ledger-table th:nth-child(12),.movement-ledger-table td:nth-child(12) { width: 110px; }
+.movement-ledger-table th:nth-child(13),.movement-ledger-table td:nth-child(13) { width: 143px; }
 .movement-ledger-table td.num,.movement-ledger-table td.ledger-in,.movement-ledger-table td.ledger-out,.movement-ledger-table td.ledger-net { text-align: right; font-weight: 700; }
 .opening-location-select { min-width: 170px; height: 36px; padding: 0 10px; border: 1px solid #d7e0ec; border-radius: 8px; background: #fff; color: #10213d; }
 .opening-location-select:disabled { background: #f4f7fb; color: #64748b; }
 .ledger-stock-link { border: 0; border-radius: 8px; padding: 7px 12px; background: #eaf2ff; color: #1d4ed8; font-weight: 800; cursor: pointer; }
 .ledger-stock-link:hover { background: #dbeafe; }
-.ledger-location-list { display: flex; flex-wrap: wrap; gap: 7px; }
-.ledger-location-list button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #bfdbfe; border-radius: 9px; padding: 6px 9px; background: #f8fbff; color: #1e3a5f; cursor: pointer; white-space: nowrap; }
+.ledger-location-list { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; }
+.ledger-location-list button { display: inline-flex; max-width: 100%; align-items: center; gap: 5px; border: 1px solid #bfdbfe; border-radius: 8px; padding: 5px 7px; overflow: hidden; background: #f8fbff; color: #1e3a5f; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.ledger-location-list button b,.ledger-location-list button span { overflow: hidden; text-overflow: ellipsis; }
 .ledger-location-list button:hover { border-color: #3b82f6; background: #eff6ff; }
 .ledger-location-list button span { color: #64748b; font-size: 12px; }
 .ledger-in { color: #15803d; }
