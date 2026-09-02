@@ -1,4 +1,4 @@
-import {useMemo,useState} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {ArrowDownToLine,ArrowUpFromLine,ArrowRightLeft,PackageCheck,Search,Trash2} from 'lucide-react';
 import {useApp} from '../context/AppContext';
@@ -10,9 +10,10 @@ const normalizeLotDate=value=>{const text=String(value||'').trim();if(/^\d{4}-\d
 
 export default function StockCardPage(){
   const {products,movements,lots,removeStockCardLots}=useApp(),[params]=useSearchParams();
-  const mapLocation=params.get('location')||'';
-  const [product,setProduct]=useState(params.get('product')||''),[productSearch,setProductSearch]=useState(mapLocation),[lotSearch,setLotSearch]=useState(''),[group,setGroup]=useState(params.get('group')||''),[type,setType]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState('');
+  const mapLocation=params.get('location')||'',mapProduct=params.get('product')||'',mapGroup=params.get('group')||'';
+  const [product,setProduct]=useState(mapProduct),[productSearch,setProductSearch]=useState(mapLocation),[lotSearch,setLotSearch]=useState(''),[group,setGroup]=useState(mapGroup),[type,setType]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState('');
   const [selectedLots,setSelectedLots]=useState([]),[confirmDelete,setConfirmDelete]=useState(false);
+  useEffect(()=>{setProduct(mapProduct);setProductSearch(mapLocation);setGroup(mapGroup);setSelectedLots([])},[mapLocation,mapProduct,mapGroup]);
   const filteredProducts=useMemo(()=>products.filter(item=>{
     if(group&&item.warehouseGroup!==group)return false;
     if(!productSearch)return true;
