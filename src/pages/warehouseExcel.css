@@ -265,9 +265,9 @@
 @media (min-width: 1024px) {
   .main-wrap main:has(.warehouse-page-expanded) {
     width: 100%;
-    max-width: 1440px;
+    max-width: none;
     margin-inline: auto;
-    padding: clamp(18px,2vw,26px);
+    padding: clamp(16px,1.4vw,22px);
   }
 
   .warehouse-page-expanded .card { overflow: hidden; }
