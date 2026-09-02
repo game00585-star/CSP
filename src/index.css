@@ -247,4 +247,28 @@ html.dark-theme .warehouse-zone { border-color: #32445a; background: #162235; }
   .zone-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 
+.map-insights { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 12px; }
+.map-chart-card { min-width: 0; padding: 14px 16px; }
+.map-chart-card h3,.map-activity h3 { margin: 0 0 10px; color: #26364d; font-size: 13px; }
+.map-donut { position: relative; min-height: 210px; }
+.map-donut > div:last-child { position: absolute; top: 50%; left: 50%; display: flex; flex-direction: column; align-items: center; transform: translate(-50%,-50%); pointer-events: none; }
+.map-donut > div:last-child b { color: #0f2745; font-size: 25px; line-height: 1; }
+.map-donut > div:last-child span { margin-top: 4px; color: #8491a3; font-size: 10px; }
+.map-chart-legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; color: #718096; font-size: 10px; }
+.map-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.map-chart-legend i { width: 8px; height: 8px; border-radius: 50%; }
+.map-chart-legend b { color: #334155; }
+.map-activity { margin-top: 12px; padding: 14px 16px 8px; }
+.map-activity table { font-size: 11px; }
+.map-activity th { font-size: 9px; }
+.map-activity th,.map-activity td { padding: 9px 12px; }
+html.dark-theme .map-chart-card h3,
+html.dark-theme .map-activity h3,
+html.dark-theme .map-donut > div:last-child b,
+html.dark-theme .map-chart-legend b { color: #e2e8f0; }
+
+@media (max-width:900px) {
+  .map-insights { grid-template-columns: 1fr; }
+}
+
 .period-current,.period-create{display:flex;align-items:center;gap:18px;padding:24px;margin-bottom:16px;background:linear-gradient(120deg,#fff,#f0f7ff)}.period-current>div:nth-child(2),.period-create>div:nth-child(2){flex:1}.period-current small{color:#64748b}.period-current h2,.period-create h2{margin:5px 0;font-size:22px}.period-current p,.period-create p{margin:0;color:#718096;font-size:11px}.period-icon{width:58px;height:58px;min-width:58px;border-radius:15px;background:#dbeafe;color:#2563eb;display:grid;place-items:center}.period-icon svg{width:29px;height:29px}.period-open{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:16px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:bold}.period-open svg{width:15px}.period-create label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:bold;color:#536175}.period-warning{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding:13px 15px;border:1px solid #fcd34d;border-radius:9px;background:#fffbeb;color:#92400e;font-size:11px}.period-warning svg{width:21px;min-width:21px}.period-warning b{display:block;margin-bottom:2px}.period-history{overflow:hidden}.period-history .card-title{padding:17px 18px;margin:0;border-bottom:1px solid #e5eaf1}.period-status{display:inline-flex;padding:5px 9px;border-radius:13px;font-size:10px;font-weight:bold}.period-status.open{background:#dcfce7;color:#15803d}.period-status.closed{background:#e2e8f0;color:#475569}@media(max-width:760px){.period-current,.period-create{align-items:stretch;flex-direction:column}.period-current .btn,.period-create .btn,.period-create label{width:100%}.period-open{align-self:flex-start}}
