@@ -134,6 +134,35 @@
   font-size: 13px;
 }
 
+.opening-balance-table th,
+.opening-balance-table td {
+  height: 52px;
+  vertical-align: middle;
+}
+
+.opening-balance-table th:nth-child(1),
+.opening-balance-table td:nth-child(1),
+.opening-balance-table th:nth-child(2),
+.opening-balance-table td:nth-child(2),
+.opening-balance-table th:nth-child(8),
+.opening-balance-table td:nth-child(8) { text-align: center; }
+
+.opening-balance-table th:nth-child(4),
+.opening-balance-table td:nth-child(4),
+.opening-balance-table th:nth-child(6),
+.opening-balance-table td:nth-child(6),
+.opening-balance-table th:nth-child(7),
+.opening-balance-table td:nth-child(7),
+.opening-balance-table th:nth-child(9),
+.opening-balance-table td:nth-child(9),
+.opening-balance-table th:nth-child(10),
+.opening-balance-table td:nth-child(10),
+.opening-balance-table th:nth-child(11),
+.opening-balance-table td:nth-child(11) { text-align: right; }
+
+.opening-balance-table th:nth-child(5),
+.opening-balance-table td:nth-child(5) { text-align: left; }
+
 .flow-edit-button {
   display: inline-flex;
   align-items: center;
