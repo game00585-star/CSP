@@ -3,6 +3,7 @@ import {NavLink,useLocation,useNavigate,Outlet} from 'react-router-dom';
 import {LayoutDashboard,Warehouse,PackagePlus,PackageMinus,ArrowRightLeft,ScrollText,ChartNoAxesCombined,Settings,LogOut,Menu,Bell,ChevronDown,ChevronLeft,ChevronRight,FileClock,ListChecks,MapPinned,Thermometer,ClipboardCheck,CalendarRange,Moon,Sun} from 'lucide-react';
 import {warehouseGroups} from '../data/constants';
 import {useApp} from '../context/AppContext';
+import AutoTablePagination from './AutoTablePagination';
 
 const menu=[['/dashboard','Dashboard',LayoutDashboard],['/warehouse-periods','รอบเดือนคลัง',CalendarRange],['/warehouse-map/all','แผนที่จุดเก็บ',MapPinned],['/icold','อุณหภูมิคลัง (iCold)',Thermometer],['/receive','รับสินค้าเข้าคลัง',PackagePlus],['/issue','จ่ายสินค้าออกจากคลัง',PackageMinus],['/transfer','โอนระหว่างคลัง',ArrowRightLeft],['/stock-count','นับสต็อกสินค้า',ClipboardCheck],['/stock-card','Stock Card',ScrollText],['/reports','รายงาน',ChartNoAxesCombined],['/change-requests','รายการแก้ไข',ListChecks],['/audit-log','Audit Log',FileClock],['/settings','ตั้งค่า',Settings]];
 const titles={dashboard:'Dashboard','warehouse-periods':'รอบเดือนคลัง',warehouse:'ยอดยกมา','movement-ledger':'รายการเคลื่อนไหว','warehouse-map':'แผนที่จุดเก็บ',icold:'อุณหภูมิคลัง (iCold)',receive:'รับสินค้าเข้าคลัง',issue:'จ่ายสินค้าออกจากคลัง',transfer:'โอนระหว่างคลัง','stock-count':'นับสต็อกสินค้า','stock-card':'Stock Card',products:'ข้อมูลสินค้า',reports:'รายงาน','change-requests':'รายการแก้ไข','audit-log':'Audit Log',settings:'ตั้งค่า'};
@@ -15,7 +16,7 @@ export default function Layout(){
   useEffect(()=>{localStorage.setItem('csp_sidebar_collapsed',String(collapsed))},[collapsed]);
   const logout=()=>{localStorage.removeItem('csp_auth');nav('/login')},title=titles[loc.pathname.split('/')[1]]||'CSP Warehouse';
   const visibleMenu=locked?menu.filter(([to])=>to==='/warehouse-periods'):menu;
-  return <div className="app-shell">
+  return <div className="app-shell"><AutoTablePagination/>
     <aside className={`sidebar ${collapsed?'collapsed':''} ${mobile?'mobile-open':''}`}>
       <div className="brand"><div className="brand-mark"><Warehouse/></div>{!collapsed&&<div><b>CSP Warehouse</b><small>CSP Foods Supply Co., Ltd.</small></div>}<button className="mobile-close" onClick={()=>setMobile(false)}><ChevronLeft/></button></div>
       <button className="sidebar-edge-toggle" onClick={()=>setCollapsed(value=>!value)} aria-label={collapsed?'เปิดเมนูด้านซ้าย':'ย่อเมนูด้านซ้าย'} title={collapsed?'เปิดเมนู':'ย่อเมนู'}>{collapsed?<ChevronRight/>:<ChevronLeft/>}</button>
