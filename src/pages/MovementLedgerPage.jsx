@@ -1,10 +1,10 @@
-import {useMemo,useState} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import {useNavigate,useParams} from 'react-router-dom';
-import {ArrowLeftRight,CalendarDays,MapPinned} from 'lucide-react';
+import {ArrowLeftRight,Boxes,CalendarDays,MapPinned,PackageCheck,PackageX,TriangleAlert} from 'lucide-react';
 import {useApp} from '../context/AppContext';
 import {warehouseGroups} from '../data/constants';
 import {fmt} from '../utils/helpers';
-import {Empty,ExportButton,PageHeader,Toolbar} from '../components/common';
+import {Empty,ExportButton,PageHeader,Pagination,StatCard,Toolbar} from '../components/common';
 import './warehouseExcel.css';
 
 const thaiDate=value=>value?new Date(`${value}T00:00:00`).toLocaleDateString('th-TH'):'—';
@@ -21,11 +21,11 @@ const divisorOf=value=>{const match=String(value??'').replaceAll(',','').match(/
 
 export default function MovementLedgerPage(){
   const {group}=useParams(),nav=useNavigate(),{openingClosures,movements,products,lots,activePeriod,viewingPeriod}=useApp();
-  const [search,setSearch]=useState(''),[selected,setSelected]=useState([]);
+  const [search,setSearch]=useState(''),[status,setStatus]=useState(''),[unit,setUnit]=useState(''),[page,setPage]=useState(1),[size,setSize]=useState(10),[selected,setSelected]=useState([]);
   const [headerNames]=useState(readHeaderNames);
   const warehouse=warehouseGroups.find(item=>item.path===group)||warehouseGroups[0],periodMonth=(activePeriod||viewingPeriod)?.month;
   const closure=openingClosures.filter(item=>item.warehouseGroup===warehouse.id&&(!periodMonth||item.periodMonth===periodMonth)).sort((a,b)=>String(b.closedAt).localeCompare(String(a.closedAt)))[0];
-  const rows=useMemo(()=>{
+  const allRows=useMemo(()=>{
     if(!closure)return[];
     return closure.rows.map(row=>{
       const product=products.find(item=>item.id===row.productId)||{},currentWarehouse=product.warehouseGroup||warehouse.id;
@@ -50,12 +50,17 @@ export default function MovementLedgerPage(){
         maxStock:valueOrDash(row.maxStock??sourceField(product,'MAX')??product.maxStock),
         comment:valueOrDash(row.comment??sourceField(product,'Comment')??product.comment),
         warehouseGroup:currentWarehouse,locations,locationSummary:locations.map(location=>`${location.name} (${fmt(location.quantity)} ${row.unit||product.unit||'หน่วย'})`).join(', ')||'ยังไม่ระบุจุดจัดเก็บ',packSize,packCount:packDivisor>0?netBalance/packDivisor:null,unit:row.unit||product.unit||'—',incoming,outgoing,netBalance};
-    }).filter(row=>!search||`${row.productCode} ${row.productName}`.toLowerCase().includes(search.toLowerCase()));
-  },[closure,movements,products,lots,search,warehouse.id]);
+    });
+  },[closure,movements,products,lots,warehouse.id]);
+  const statusOf=row=>Number(row.netBalance)<=0?'หมด':Number(row.netBalance)<=Number(row.minStock||0)?'ใกล้หมด':'ปกติ';
+  const rows=useMemo(()=>allRows.filter(row=>(!search||`${row.productCode} ${row.productName}`.toLowerCase().includes(search.toLowerCase()))&&(!status||statusOf(row)===status)&&(!unit||row.unit===unit)),[allRows,search,status,unit]);
+  const units=useMemo(()=>[...new Set(allRows.map(row=>row.unit).filter(value=>value&&value!=='—'))],[allRows]);
+  const stats=useMemo(()=>({stock:allRows.reduce((sum,row)=>sum+Number(row.netBalance||0),0),low:allRows.filter(row=>statusOf(row)==='ใกล้หมด').length,out:allRows.filter(row=>statusOf(row)==='หมด').length}),[allRows]);
+  useEffect(()=>{setPage(current=>Math.min(current,Math.max(1,Math.ceil(rows.length/size))))},[rows.length,size]);
   const selectedRows=selected.filter(id=>rows.some(row=>row.productId===id)),allSelected=rows.length>0&&rows.every(row=>selected.includes(row.productId));
   const toggleAll=()=>setSelected(allSelected?[]:rows.map(row=>row.productId));
   const openMoveSelection=()=>{sessionStorage.setItem('csp_map_product_selection',JSON.stringify(selectedRows));nav(`/warehouse-map/${warehouse.path}?assign=1`)};
-  const displayHeader=(column,index)=>column==='จำนวนสินค้าคงเหลือ'?'จำนวนสินค้าคงเหลือสุทธิ':column==='แผนที่จุดเก็บ'?'แผนที่จุดเก็บ':headerNames[warehouse.id]?.length===tableColumns.length?headerNames[warehouse.id][index]||column:column;
+  const displayHeader=(column,index)=>column==='ยอดยกมา'?'ยอดยกมา':column==='จำนวนสินค้าคงเหลือ'?'จำนวนสินค้าคงเหลือสุทธิ':column==='แผนที่จุดเก็บ'?'แผนที่จุดเก็บ':headerNames[warehouse.id]?.length===tableColumns.length?headerNames[warehouse.id][index]||column:column;
   const rowValue=(row,column)=>{
     if(column==='ลำดับ')return row.sequence;
     if(column==='รหัสสินค้า')return row.productCode;
@@ -73,9 +78,10 @@ export default function MovementLedgerPage(){
   };
   const displayValue=(row,column)=>{const value=rowValue(row,column);return['ยอดยกมา','จำนวนสินค้าคงเหลือ','จำนวนกระสอบ/ลัง','IN','OUT'].includes(column)&&value!=='—'?fmt(value):value};
   const exportRows=rows.map(row=>Object.fromEntries(tableColumns.map((column,index)=>[displayHeader(column,index),rowValue(row,column)])));
-  return <div className="movement-ledger-page">
+  const pageRows=rows.slice((page-1)*size,page*size);
+  return <div className="movement-ledger-page warehouse-page-expanded">
     <PageHeader title={`รายการเคลื่อนไหว · ${warehouse.name}`} subtitle="ติดตามยอดยกมา รับเข้า จ่ายออก และจำนวนสินค้าคงเหลือสุทธิ" actions={<ExportButton rows={exportRows} name={`CSP-movement-ledger-${warehouse.path}`}/>}/>
     {closure?<div className="ledger-opening-banner"><div><CalendarDays/><span><small>ยอดยกมา ณ วันที่</small><b>{thaiDate(closure.openingDate)}</b></span></div><div><small>จบยอดโดย</small><b>{closure.closedBy}</b></div><div><small>จำนวนรายการ</small><b>{closure.rows.length} รายการ</b></div></div>:<div className="card ledger-not-ready"><ArrowLeftRight/><h3>ยังไม่ได้จบยอดยกมาของคลัง {warehouse.name}</h3><p>กรุณาตรวจสอบและอนุมัติรายการแก้ไขให้ครบ แล้วกด “จบยอดยกมา” ก่อน</p><button className="btn primary" onClick={()=>nav(`/warehouse/${warehouse.path}`)}>ไปที่ยอดยกมา</button></div>}
-    {closure&&<div className="card"><Toolbar search={search} setSearch={setSearch}><button className="btn ghost" onClick={()=>setSearch('')}>ล้างตัวกรอง</button>{selectedRows.length>0&&<button className="btn primary" onClick={openMoveSelection}><MapPinned/> ย้ายสินค้า ({selectedRows.length})</button>}</Toolbar><div className="table-wrap movement-ledger-table"><table><thead><tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="เลือกสินค้าทั้งหมด"/></th>{tableColumns.map((column,index)=><th key={column}>{displayHeader(column,index)}</th>)}</tr></thead><tbody>{rows.map(row=><tr key={row.productId} className={selected.includes(row.productId)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(row.productId)} onChange={()=>setSelected(current=>current.includes(row.productId)?current.filter(id=>id!==row.productId):[...current,row.productId])} aria-label={`เลือก ${row.productName}`}/></td>{tableColumns.map(column=><td key={column} className={column==='IN'?'ledger-in':column==='OUT'?'ledger-out':column==='จำนวนสินค้าคงเหลือ'?'ledger-net':['ยอดยกมา','กก./กระสอบ','จำนวนกระสอบ/ลัง'].includes(column)?'num':''}>{column==='แผนที่จุดเก็บ'?<div className="ledger-location-list">{row.locations.length?row.locations.map(location=><button key={location.id||location.name} onClick={()=>nav(`/stock-card?group=${encodeURIComponent(row.warehouseGroup)}&location=${encodeURIComponent(location.name)}&product=${encodeURIComponent(row.productId)}`)}><b>{location.name}</b><span>{fmt(location.quantity)} {row.unit}</span></button>):<span>ยังไม่ระบุจุดจัดเก็บ</span>}</div>:displayValue(row,column)}</td>)}</tr>)}</tbody></table>{!rows.length&&<Empty/>}</div></div>}
+    {closure&&<><div className="stats-grid compact"><StatCard icon={Boxes} label="จำนวนรายการ" value={allRows.length} unit="สินค้า"/><StatCard icon={PackageCheck} label="Stock คงเหลือ" value={fmt(stats.stock)} unit="หน่วย" color="green"/><StatCard icon={TriangleAlert} label="ใกล้หมด" value={stats.low} unit="รายการ" color="orange"/><StatCard icon={PackageX} label="หมด" value={stats.out} unit="รายการ" color="red"/></div><div className="card"><Toolbar search={search} setSearch={value=>{setSearch(value);setPage(1)}}><select value={status} onChange={event=>{setStatus(event.target.value);setPage(1)}}><option value="">ทุกสถานะ</option><option>ปกติ</option><option>ใกล้หมด</option><option>หมด</option></select><select value={unit} onChange={event=>{setUnit(event.target.value);setPage(1)}}><option value="">ทุกหน่วย</option>{units.map(item=><option key={item}>{item}</option>)}</select><button className="btn ghost" onClick={()=>{setSearch('');setStatus('');setUnit('');setPage(1)}}>ล้างตัวกรอง</button>{selectedRows.length>0&&<button className="btn primary" onClick={openMoveSelection}><MapPinned/> ย้ายสินค้า ({selectedRows.length})</button>}<ExportButton rows={exportRows} name={`CSP-movement-ledger-${warehouse.path}`}/></Toolbar><div className="table-wrap movement-ledger-table opening-balance-table"><table><thead><tr><th><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="เลือกสินค้าทั้งหมด"/></th>{tableColumns.map((column,index)=><th key={column}>{displayHeader(column,index)}</th>)}</tr></thead><tbody>{pageRows.map((row,rowIndex)=><tr key={row.productId} className={selected.includes(row.productId)?'selected-row':''}><td><input type="checkbox" checked={selected.includes(row.productId)} onChange={()=>setSelected(current=>current.includes(row.productId)?current.filter(id=>id!==row.productId):[...current,row.productId])} aria-label={`เลือก ${row.productName}`}/></td>{tableColumns.map(column=><td key={column} className={column==='IN'?'ledger-in':column==='OUT'?'ledger-out':column==='จำนวนสินค้าคงเหลือ'?'ledger-net':['ยอดยกมา','กก./กระสอบ','จำนวนกระสอบ/ลัง'].includes(column)?'num':''}>{column==='ลำดับ'?(page-1)*size+rowIndex+1:column==='แผนที่จุดเก็บ'?<div className="ledger-location-list">{row.locations.length?row.locations.map(location=><button key={location.id||location.name} onClick={()=>nav(`/stock-card?group=${encodeURIComponent(row.warehouseGroup)}&location=${encodeURIComponent(location.name)}&product=${encodeURIComponent(row.productId)}`)}><b>{location.name}</b><span>{fmt(location.quantity)} {row.unit}</span></button>):<span>ยังไม่ระบุจุดจัดเก็บ</span>}</div>:displayValue(row,column)}</td>)}</tr>)}</tbody></table>{!rows.length&&<Empty/>}</div><Pagination page={page} setPage={setPage} total={rows.length} size={size} setSize={setSize}/></div></>}
   </div>;
 }
