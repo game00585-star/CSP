@@ -198,23 +198,23 @@
 .ledger-not-ready svg { width: 48px; height: 48px; color: #94a3b8; }
 .ledger-not-ready h3,.ledger-not-ready p { margin: 0; }
 .ledger-not-ready p { color: #64748b; }
-.movement-ledger-table table { width: 100%; min-width: 1500px; table-layout: fixed; }
+.movement-ledger-table table { width: 100%; min-width: 1280px; table-layout: fixed; }
 .movement-ledger-table th,.movement-ledger-table td { box-sizing: border-box; padding: 10px 9px; vertical-align: middle; }
 .movement-ledger-table th { overflow: hidden; background: #f4f7fb; font-size: 11.5px; line-height: 1.35; text-align: left; white-space: normal; }
 .movement-ledger-table td { overflow: hidden; font-size: 12.5px; line-height: 1.4; text-overflow: ellipsis; }
-.movement-ledger-table th:nth-child(1),.movement-ledger-table td:nth-child(1) { width: 42px; text-align: center; }
-.movement-ledger-table th:nth-child(2),.movement-ledger-table td:nth-child(2) { width: 60px; text-align: center; }
-.movement-ledger-table th:nth-child(3),.movement-ledger-table td:nth-child(3) { width: 130px; }
-.movement-ledger-table th:nth-child(4),.movement-ledger-table td:nth-child(4) { width: 105px; }
-.movement-ledger-table th:nth-child(5),.movement-ledger-table td:nth-child(5) { width: 320px; white-space: normal; }
-.movement-ledger-table th:nth-child(6),.movement-ledger-table td:nth-child(6) { width: 105px; }
-.movement-ledger-table th:nth-child(7),.movement-ledger-table td:nth-child(7) { width: 150px; }
-.movement-ledger-table th:nth-child(8),.movement-ledger-table td:nth-child(8) { width: 75px; }
-.movement-ledger-table th:nth-child(9),.movement-ledger-table td:nth-child(9) { width: 120px; }
+.movement-ledger-table th:nth-child(1),.movement-ledger-table td:nth-child(1) { width: 38px; text-align: center; }
+.movement-ledger-table th:nth-child(2),.movement-ledger-table td:nth-child(2) { width: 50px; text-align: center; }
+.movement-ledger-table th:nth-child(3),.movement-ledger-table td:nth-child(3) { width: 112px; }
+.movement-ledger-table th:nth-child(4),.movement-ledger-table td:nth-child(4) { width: 92px; }
+.movement-ledger-table th:nth-child(5),.movement-ledger-table td:nth-child(5) { width: 280px; white-space: normal; }
+.movement-ledger-table th:nth-child(6),.movement-ledger-table td:nth-child(6) { width: 92px; }
+.movement-ledger-table th:nth-child(7),.movement-ledger-table td:nth-child(7) { width: 128px; }
+.movement-ledger-table th:nth-child(8),.movement-ledger-table td:nth-child(8) { width: 62px; }
+.movement-ledger-table th:nth-child(9),.movement-ledger-table td:nth-child(9) { width: 102px; }
 .movement-ledger-table th:nth-child(10),.movement-ledger-table td:nth-child(10),
-.movement-ledger-table th:nth-child(11),.movement-ledger-table td:nth-child(11) { width: 70px; }
-.movement-ledger-table th:nth-child(12),.movement-ledger-table td:nth-child(12) { width: 110px; }
-.movement-ledger-table th:nth-child(13),.movement-ledger-table td:nth-child(13) { width: 143px; }
+.movement-ledger-table th:nth-child(11),.movement-ledger-table td:nth-child(11) { width: 58px; }
+.movement-ledger-table th:nth-child(12),.movement-ledger-table td:nth-child(12) { width: 92px; }
+.movement-ledger-table th:nth-child(13),.movement-ledger-table td:nth-child(13) { width: 122px; }
 .movement-ledger-table td.num,.movement-ledger-table td.ledger-in,.movement-ledger-table td.ledger-out,.movement-ledger-table td.ledger-net { text-align: right; font-weight: 700; }
 .opening-location-select { min-width: 170px; height: 36px; padding: 0 10px; border: 1px solid #d7e0ec; border-radius: 8px; background: #fff; color: #10213d; }
 .opening-location-select:disabled { background: #f4f7fb; color: #64748b; }
@@ -260,4 +260,20 @@
   .warehouse-page-expanded .page-head .actions {
     justify-content: stretch;
   }
+}
+
+@media (min-width: 1024px) {
+  .main-wrap main:has(.warehouse-page-expanded) {
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+    padding: clamp(18px,2vw,26px);
+  }
+
+  .warehouse-page-expanded .card { overflow: hidden; }
+  .warehouse-page-expanded .table-wrap { width: 100%; }
+}
+
+@media (min-width: 1280px) {
+  .movement-ledger-table table { min-width: 100%; }
 }

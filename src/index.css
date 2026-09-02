@@ -34,4 +34,28 @@ tr.selected-row td{background:#eff6ff}table input[type="checkbox"]{width:16px;he
 @media(max-width:1100px){.warehouse-floorplan{grid-template-columns:105px minmax(0,1fr)}.floorplan-content{grid-template-columns:repeat(2,minmax(280px,1fr))}.warehouse-zone,.warehouse-zone.after-aisle,.warehouse-zone:nth-of-type(4),.warehouse-zone:nth-of-type(5){grid-column:span 1}.warehouse-aisle{display:none}}
 @media(max-width:700px){.warehouse-floorplan{display:block}.map-legend{border-right:0;border-bottom:1px solid #e2e8f0}.map-legend>span{display:inline-flex;margin-right:12px}.map-legend hr,.map-legend h3:nth-of-type(2),.map-legend p,.map-compass{display:none}.floorplan-content{display:block;padding:10px}.warehouse-zone{min-width:0;margin-bottom:10px}.zone-grid{grid-template-columns:repeat(2,1fr)}}
 
+/* Desktop-first responsive sizing: content stays centered while wide data tables
+   own their overflow instead of forcing the entire application to scroll. */
+@media (min-width:1024px) {
+  .main-wrap { min-width: 0; overflow-x: clip; }
+  .main-wrap > header { padding-inline: clamp(18px,2vw,30px); }
+  .main-wrap > main { width: 100%; max-width: 1440px; padding: clamp(20px,2vw,30px); }
+  .main-wrap > main > * { min-width: 0; }
+  .page-head { align-items: center; gap: 20px; }
+  .page-head > div:first-child { min-width: 0; }
+  .page-head .actions,.toolbar { flex-wrap: wrap; }
+  .card,.table-wrap { min-width: 0; max-width: 100%; }
+  .table-wrap { overscroll-behavior-inline: contain; }
+  .stats-grid,.stats-grid.compact { grid-template-columns: repeat(4,minmax(180px,1fr)); }
+  .btn,input,select,textarea { min-height: 40px; }
+}
+
+@media (min-width:1024px) and (max-width:1279px) {
+  .main-wrap > main { padding: 20px; }
+  .page-head { align-items: flex-start; }
+  .page-head .actions { justify-content: flex-end; }
+  .toolbar .search { flex-basis: 100%; }
+  .stats-grid,.stats-grid.compact { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
 .period-current,.period-create{display:flex;align-items:center;gap:18px;padding:24px;margin-bottom:16px;background:linear-gradient(120deg,#fff,#f0f7ff)}.period-current>div:nth-child(2),.period-create>div:nth-child(2){flex:1}.period-current small{color:#64748b}.period-current h2,.period-create h2{margin:5px 0;font-size:22px}.period-current p,.period-create p{margin:0;color:#718096;font-size:11px}.period-icon{width:58px;height:58px;min-width:58px;border-radius:15px;background:#dbeafe;color:#2563eb;display:grid;place-items:center}.period-icon svg{width:29px;height:29px}.period-open{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:16px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:bold}.period-open svg{width:15px}.period-create label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:bold;color:#536175}.period-warning{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding:13px 15px;border:1px solid #fcd34d;border-radius:9px;background:#fffbeb;color:#92400e;font-size:11px}.period-warning svg{width:21px;min-width:21px}.period-warning b{display:block;margin-bottom:2px}.period-history{overflow:hidden}.period-history .card-title{padding:17px 18px;margin:0;border-bottom:1px solid #e5eaf1}.period-status{display:inline-flex;padding:5px 9px;border-radius:13px;font-size:10px;font-weight:bold}.period-status.open{background:#dcfce7;color:#15803d}.period-status.closed{background:#e2e8f0;color:#475569}@media(max-width:760px){.period-current,.period-create{align-items:stretch;flex-direction:column}.period-current .btn,.period-create .btn,.period-create label{width:100%}.period-open{align-self:flex-start}}
