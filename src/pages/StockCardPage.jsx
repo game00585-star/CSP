@@ -109,9 +109,10 @@ export default function StockCardPage() {
               .includes(productSearch.toLowerCase())) &&
           (!lotSearch || normalizeLotDate(movement.lotNo) === lotSearch) &&
           (!group || movement.warehouseGroup === group) &&
-          (!type || type === "TRANSFER"
-            ? movement.transactionType.startsWith("TRANSFER_")
-            : movement.transactionType === type) &&
+          (!type ||
+            (type === "TRANSFER"
+              ? movement.transactionType.startsWith("TRANSFER_")
+              : movement.transactionType === type)) &&
           (!from || movement.transactionDate >= from) &&
           (!to || movement.transactionDate <= to)
         );
@@ -158,14 +159,14 @@ export default function StockCardPage() {
     [lots, products, product, productSearch, lotSearch, group, status],
   );
   const totals = {
-    in: list.reduce((sum, movement) => sum + movement.quantityIn, 0),
-    out: list.reduce((sum, movement) => sum + movement.quantityOut, 0),
+    in: list.reduce((sum, movement) => sum + Number(movement.quantityIn || 0), 0),
+    out: list.reduce((sum, movement) => sum + Number(movement.quantityOut || 0), 0),
     tin: list
       .filter((movement) => movement.transactionType === "TRANSFER_IN")
-      .reduce((sum, movement) => sum + movement.quantityIn, 0),
+      .reduce((sum, movement) => sum + Number(movement.quantityIn || 0), 0),
     tout: list
       .filter((movement) => movement.transactionType === "TRANSFER_OUT")
-      .reduce((sum, movement) => sum + movement.quantityOut, 0),
+      .reduce((sum, movement) => sum + Number(movement.quantityOut || 0), 0),
   };
   const filteredStock = lotList.reduce(
       (sum, lot) => sum + Number(lot.quantityRemaining || 0),

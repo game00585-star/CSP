@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -81,7 +81,7 @@ export default function TransactionPage({ type }) {
       addDocument,
       setToast,
     } = useApp();
-  const [doc] = useState(() => docNo(c.prefix)),
+  const [doc, setDoc] = useState(() => docNo(c.prefix)),
     [date, setDate] = useState(() => localDateKey());
   const [group, setGroup] = useState("RM"),
     [dest, setDest] = useState("FG-CUT"),
@@ -95,6 +95,53 @@ export default function TransactionPage({ type }) {
     [error, setError] = useState(""),
     [printDocument, setPrintDocument] = useState(null),
     [showResults, setShowResults] = useState(false);
+  const draftKey = "csp_transaction_drafts";
+  useEffect(() => {
+    try {
+      const draft = JSON.parse(localStorage.getItem(draftKey) || "{}")[type];
+      if (!draft) {
+        setDoc(docNo(c.prefix));
+        return;
+      }
+      setDoc(draft.doc || docNo(c.prefix));
+      setDate(draft.date || localDateKey());
+      setGroup(draft.group || "RM");
+      setDest(draft.dest || "FG-CUT");
+      setSupplier(draft.supplier || "บริษัท ซัพพลายเออร์ จำกัด");
+      setRef(draft.ref || "");
+      setRemark(draft.remark || "");
+      setItems(Array.isArray(draft.items) ? draft.items : []);
+      setToast(`โหลดแบบร่าง${c.title}แล้ว`);
+    } catch {
+      localStorage.removeItem(draftKey);
+    }
+  }, [type, c.prefix, c.title, setToast]);
+  const removeDraft = () => {
+    const drafts = JSON.parse(localStorage.getItem(draftKey) || "{}");
+    delete drafts[type];
+    localStorage.setItem(draftKey, JSON.stringify(drafts));
+  };
+  const saveDraft = () => {
+    if (!items.length) {
+      setError("กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการก่อนบันทึกแบบร่าง");
+      return;
+    }
+    const drafts = JSON.parse(localStorage.getItem(draftKey) || "{}");
+    drafts[type] = {
+      doc,
+      date,
+      group,
+      dest,
+      supplier,
+      ref,
+      remark,
+      items,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(draftKey, JSON.stringify(drafts));
+    setError("");
+    setToast(`บันทึกแบบร่าง ${doc} แล้ว`);
+  };
   const available = useMemo(
     () =>
       products.filter(
@@ -306,6 +353,7 @@ export default function TransactionPage({ type }) {
               }),
       );
       addDocument(documentData);
+      removeDraft();
       setPrintDocument(documentData);
       setItems([]);
       setProductId("");
@@ -840,7 +888,7 @@ export default function TransactionPage({ type }) {
             </div>
           )}
           <hr />
-          <button className="btn ghost">
+          <button className="btn ghost" onClick={saveDraft}>
             <Save /> บันทึกแบบร่าง
           </button>
           <button
@@ -856,6 +904,7 @@ export default function TransactionPage({ type }) {
               setItems([]);
               setProductId("");
               setProductSearch("");
+              removeDraft();
               setToast("ยกเลิกรายการแล้ว");
             }}
           >

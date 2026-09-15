@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-export const stockStatus=p=>p.currentStock===0?'หมด':p.currentStock<=p.minStock?'ใกล้หมด':'ปกติ';
+export const stockStatus=p=>Number(p.currentStock||0)<=0?'หมด':Number(p.currentStock||0)<=Number(p.minStock||0)?'ใกล้หมด':'ปกติ';
 export const statusClass=s=>s==='ปกติ'?'badge green':s==='ใกล้หมด'?'badge orange':'badge red';
 export const fmt=n=>Number(n||0).toLocaleString('th-TH');
 export const localDateKey=(value=new Date())=>{const date=value instanceof Date?value:new Date(value);if(Number.isNaN(date.getTime()))return'';return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`};
