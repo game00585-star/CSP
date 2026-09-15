@@ -17,6 +17,7 @@ import {
   convertQuantity,
   docNo,
   fmt,
+  localDateKey,
   printHtml,
   unitsCompatible,
 } from "../utils/helpers";
@@ -81,7 +82,7 @@ export default function TransactionPage({ type }) {
       setToast,
     } = useApp();
   const [doc] = useState(() => docNo(c.prefix)),
-    [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+    [date, setDate] = useState(() => localDateKey());
   const [group, setGroup] = useState("RM"),
     [dest, setDest] = useState("FG-CUT"),
     [supplier, setSupplier] = useState("บริษัท ซัพพลายเออร์ จำกัด");

@@ -26,7 +26,7 @@ import {
 } from "recharts";
 import { useApp } from "../context/AppContext";
 import { warehouseGroups, movementLabels } from "../data/constants";
-import { fmt, stockStatus } from "../utils/helpers";
+import { fmt, localDateKey, stockStatus } from "../utils/helpers";
 import { PageHeader, StatCard, StatusBadge, Empty } from "../components/common";
 
 const dayMs = 24 * 60 * 60 * 1000;
@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayTime = today.getTime();
-  const todayIso = today.toISOString().slice(0, 10);
+  const todayIso = localDateKey(today);
   const stats = useMemo(
     () => ({
       stock: products.reduce((a, p) => a + p.currentStock, 0),
