@@ -1,11 +1,215 @@
-import {useId} from 'react';import {X,Search,ChevronLeft,ChevronRight,Download,PackageOpen} from 'lucide-react';import {exportExcel} from '../utils/helpers';
-export function PageHeader({title,subtitle,actions}){return <div className="page-head"><div><h1>{title}</h1><p>{subtitle}</p></div><div className="actions">{actions}</div></div>}
-export function StatCard({icon:Icon,label,value,unit,color='blue'}){return <div className="stat"><div className={`stat-icon ${color}`}><Icon size={21}/></div><div><small>{label}</small><strong>{value}</strong><span>{unit}</span></div></div>}
-export function StatusBadge({status}){return <span className={`badge ${status==='ปกติ'?'green':status==='ใกล้หมด'?'orange':'red'}`}>{status}</span>}
-export function SearchInput({value,onChange,options=[],placeholder='ค้นหา',ariaLabel='ค้นหา',onKeyDown}){const id=useId(),values=[...new Set(options.filter(Boolean).map(String))].slice(0,200);return <><input aria-label={ariaLabel} value={value} onChange={event=>onChange(event.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} list={id}/><datalist id={id}>{values.map(option=><option value={option} key={option}/>)}</datalist></>}
-export function Toolbar({search,setSearch,options=[],children}){let suggestions=options;try{if(!suggestions.length)suggestions=(JSON.parse(localStorage.getItem('csp_products'))||[]).flatMap(product=>[product.productName,product.productCode])}catch{suggestions=[]}return <div className="toolbar"><label className="search"><Search size={17}/><SearchInput value={search} onChange={setSearch} options={suggestions} placeholder="พิมพ์ชื่อหรือรหัสสินค้า" ariaLabel="ค้นหาชื่อหรือรหัสสินค้า"/></label>{children}</div>}
-export function ExportButton({rows,name}){return <button className="btn secondary" onClick={()=>exportExcel(rows,name)}><Download size={17}/> Export Excel</button>}
-export function Empty(){return <div className="empty"><PackageOpen/><b>ไม่พบข้อมูล</b><span>ลองเปลี่ยนคำค้นหาหรือตัวกรอง</span></div>}
-export function Pagination({page,setPage,total,size,setSize}){const pages=Math.max(1,Math.ceil(total/size)),current=Math.min(page,pages);return <div className="pagination"><span>ทั้งหมด {total} รายการ</span><div><label className="page-size-label">แถวต่อหน้า<select value={size} onChange={e=>{setSize(+e.target.value);setPage(1)}} aria-label="จำนวนแถวต่อหน้า"><option>10</option><option>20</option><option>50</option><option>100</option></select></label><button disabled={current===1} onClick={()=>setPage(current-1)} aria-label="หน้าก่อน"><ChevronLeft/></button><span>{current} / {pages}</span><button disabled={current===pages} onClick={()=>setPage(current+1)} aria-label="หน้าถัดไป"><ChevronRight/></button></div></div>}
-export function Modal({title,onClose,children,wide=false}){return <div className="modal-bg" role="presentation" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><div className={`modal ${wide?'wide':''}`} role="dialog" aria-modal="true"><div className="modal-head"><h2>{title}</h2><button className="icon-btn" onClick={onClose} aria-label="ปิด"><X/></button></div>{children}</div></div>}
-export function ConfirmModal({title,text,onClose,onConfirm}){return <Modal title={title} onClose={onClose}><p className="confirm-text">{text}</p><div className="modal-actions"><button className="btn ghost" onClick={onClose}>ยกเลิก</button><button className="btn primary" onClick={onConfirm}>ยืนยัน</button></div></Modal>}
+import { useId } from "react";
+import {
+  X,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  PackageOpen,
+} from "lucide-react";
+import { exportExcel } from "../utils/helpers";
+export function PageHeader({ title, subtitle, actions }) {
+  return (
+    <div className="page-head">
+      <div>
+        <h1>{title}</h1>
+        <p>{subtitle}</p>
+      </div>
+      <div className="actions">{actions}</div>
+    </div>
+  );
+}
+export function StatCard({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  color = "blue",
+  onClick,
+}) {
+  const content = (
+    <>
+      <div className={`stat-icon ${color}`}>
+        <Icon size={21} />
+      </div>
+      <div>
+        <small>{label}</small>
+        <strong>{value}</strong>
+        <span>{unit}</span>
+      </div>
+    </>
+  );
+  return onClick ? (
+    <button
+      type="button"
+      className="stat stat-clickable"
+      onClick={onClick}
+      aria-label={`เปิดดู ${label}`}
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="stat">{content}</div>
+  );
+}
+export function StatusBadge({ status }) {
+  return (
+    <span
+      className={`badge ${status === "ปกติ" ? "green" : status === "ใกล้หมด" ? "orange" : "red"}`}
+    >
+      {status}
+    </span>
+  );
+}
+export function SearchInput({
+  value,
+  onChange,
+  options = [],
+  placeholder = "ค้นหา",
+  ariaLabel = "ค้นหา",
+  onKeyDown,
+}) {
+  const id = useId(),
+    values = [...new Set(options.filter(Boolean).map(String))].slice(0, 200);
+  return (
+    <>
+      <input
+        aria-label={ariaLabel}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder={placeholder}
+        list={id}
+      />
+      <datalist id={id}>
+        {values.map((option) => (
+          <option value={option} key={option} />
+        ))}
+      </datalist>
+    </>
+  );
+}
+export function Toolbar({ search, setSearch, options = [], children }) {
+  let suggestions = options;
+  try {
+    if (!suggestions.length)
+      suggestions = (
+        JSON.parse(localStorage.getItem("csp_products")) || []
+      ).flatMap((product) => [product.productName, product.productCode]);
+  } catch {
+    suggestions = [];
+  }
+  return (
+    <div className="toolbar">
+      <label className="search">
+        <Search size={17} />
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          options={suggestions}
+          placeholder="พิมพ์ชื่อหรือรหัสสินค้า"
+          ariaLabel="ค้นหาชื่อหรือรหัสสินค้า"
+        />
+      </label>
+      {children}
+    </div>
+  );
+}
+export function ExportButton({ rows, name }) {
+  return (
+    <button className="btn secondary" onClick={() => exportExcel(rows, name)}>
+      <Download size={17} /> Export Excel
+    </button>
+  );
+}
+export function Empty() {
+  return (
+    <div className="empty">
+      <PackageOpen />
+      <b>ไม่พบข้อมูล</b>
+      <span>ลองเปลี่ยนคำค้นหาหรือตัวกรอง</span>
+    </div>
+  );
+}
+export function Pagination({ page, setPage, total, size, setSize }) {
+  const pages = Math.max(1, Math.ceil(total / size)),
+    current = Math.min(page, pages);
+  return (
+    <div className="pagination">
+      <span>ทั้งหมด {total} รายการ</span>
+      <div>
+        <label className="page-size-label">
+          แถวต่อหน้า
+          <select
+            value={size}
+            onChange={(e) => {
+              setSize(+e.target.value);
+              setPage(1);
+            }}
+            aria-label="จำนวนแถวต่อหน้า"
+          >
+            <option>10</option>
+            <option>20</option>
+            <option>50</option>
+            <option>100</option>
+          </select>
+        </label>
+        <button
+          disabled={current === 1}
+          onClick={() => setPage(current - 1)}
+          aria-label="หน้าก่อน"
+        >
+          <ChevronLeft />
+        </button>
+        <span>
+          {current} / {pages}
+        </span>
+        <button
+          disabled={current === pages}
+          onClick={() => setPage(current + 1)}
+          aria-label="หน้าถัดไป"
+        >
+          <ChevronRight />
+        </button>
+      </div>
+    </div>
+  );
+}
+export function Modal({ title, onClose, children, wide = false }) {
+  return (
+    <div
+      className="modal-bg"
+      role="presentation"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className={`modal ${wide ? "wide" : ""}`}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="modal-head">
+          <h2>{title}</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="ปิด">
+            <X />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+export function ConfirmModal({ title, text, onClose, onConfirm }) {
+  return (
+    <Modal title={title} onClose={onClose}>
+      <p className="confirm-text">{text}</p>
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={onClose}>
+          ยกเลิก
+        </button>
+        <button className="btn primary" onClick={onConfirm}>
+          ยืนยัน
+        </button>
+      </div>
+    </Modal>
+  );
+}

@@ -1,40 +1,555 @@
-import {useMemo,useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {Warehouse,Boxes,PackageCheck,ArrowDownToLine,ArrowUpFromLine,ArrowRightLeft,TriangleAlert,PackageX,ArrowUpRight,CalendarClock,ShieldAlert} from 'lucide-react';
-import {ComposedChart,Bar,Line,XAxis,YAxis,CartesianGrid,Tooltip,Legend,ResponsiveContainer} from 'recharts';
-import {useApp} from '../context/AppContext';
-import {warehouseGroups,movementLabels} from '../data/constants';
-import {fmt,stockStatus} from '../utils/helpers';
-import {PageHeader,StatCard,StatusBadge,Empty} from '../components/common';
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Warehouse,
+  Boxes,
+  PackageCheck,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ArrowRightLeft,
+  TriangleAlert,
+  PackageX,
+  ArrowUpRight,
+  CalendarClock,
+  ShieldAlert,
+} from "lucide-react";
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { useApp } from "../context/AppContext";
+import { warehouseGroups, movementLabels } from "../data/constants";
+import { fmt, stockStatus } from "../utils/helpers";
+import { PageHeader, StatCard, StatusBadge, Empty } from "../components/common";
 
-const dayMs=24*60*60*1000;
-const validDate=(year,month,day)=>{const date=new Date(year,month-1,day);return date.getFullYear()===year&&date.getMonth()===month-1&&date.getDate()===day?date:null};
-const parseLotDate=value=>{const text=String(value||'').trim();let match=text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(match)return validDate(+match[1],+match[2],+match[3]);match=text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);return match?validDate(+match[3],+match[2],+match[1]):null};
-const shelfLabel=days=>days<0?'หมดอายุแล้ว':days===0?'หมดอายุวันนี้':`เหลือ ${days} วัน`;
+const dayMs = 24 * 60 * 60 * 1000;
+const validDate = (year, month, day) => {
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+    ? date
+    : null;
+};
+const parseLotDate = (value) => {
+  const text = String(value || "").trim();
+  let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) return validDate(+match[1], +match[2], +match[3]);
+  match = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  return match ? validDate(+match[3], +match[2], +match[1]) : null;
+};
+const shelfLabel = (days) =>
+  days < 0 ? "หมดอายุแล้ว" : days === 0 ? "หมดอายุวันนี้" : `เหลือ ${days} วัน`;
 
-export default function DashboardPage(){
-  const {products,movements,lots}=useApp(),nav=useNavigate();
-  const currentMonth=new Date().toISOString().slice(0,7);
-  const previousMonth=(()=>{const date=new Date();date.setMonth(date.getMonth()-1);return date.toISOString().slice(0,7)})();
-  const [chartWarehouse,setChartWarehouse]=useState(''),[chartMode,setChartMode]=useState('both'),[chartMonth,setChartMonth]=useState(previousMonth),[compareMonth,setCompareMonth]=useState(currentMonth);
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayTime=today.getTime();
-  const todayIso=today.toISOString().slice(0,10);
-  const stats=useMemo(()=>({stock:products.reduce((a,p)=>a+p.currentStock,0),low:products.filter(p=>stockStatus(p)==='ใกล้หมด').length,out:products.filter(p=>p.currentStock===0).length,receive:movements.filter(m=>m.transactionDate===todayIso&&m.transactionType==='RECEIVE').reduce((a,m)=>a+m.quantityIn,0),issue:movements.filter(m=>m.transactionDate===todayIso&&m.transactionType==='ISSUE').reduce((a,m)=>a+m.quantityOut,0),transfer:movements.filter(m=>m.transactionDate===todayIso&&m.transactionType==='TRANSFER_OUT').reduce((a,m)=>a+m.quantityOut,0)}),[products,movements,todayIso]);
-  const shelfLife=useMemo(()=>lots.filter(lot=>lot.quantityRemaining>0).map(lot=>{const expiry=parseLotDate(lot.lotNo);return expiry?{...lot,expiry,daysLeft:Math.ceil((expiry.getTime()-todayTime)/dayMs)}:null}).filter(Boolean).filter(lot=>lot.daysLeft<=3).sort((a,b)=>a.daysLeft-b.daysLeft),[lots,todayTime]);
-  const expired=shelfLife.filter(lot=>lot.daysLeft<0).length,warning=shelfLife.filter(lot=>lot.daysLeft>=0).length;
-  const cards=[[Warehouse,'กลุ่มคลังทั้งหมด',5,'คลัง','blue'],[Boxes,'สินค้าทั้งหมด',products.length,'รายการ','purple'],[PackageCheck,'Stock คงเหลือรวม',fmt(stats.stock),'หน่วย','green'],[ArrowDownToLine,'รับเข้าวันนี้',fmt(stats.receive),'หน่วย','green'],[ArrowUpFromLine,'จ่ายออกวันนี้',fmt(stats.issue),'หน่วย','orange'],[ArrowRightLeft,'โอนคลังวันนี้',fmt(stats.transfer),'หน่วย','purple'],[TriangleAlert,'สินค้าใกล้หมด',stats.low,'รายการ','orange'],[PackageX,'สินค้าหมด',stats.out,'รายการ','red']];
-  const chartData=useMemo(()=>[chartMonth,compareMonth].map((month,index)=>{const monthly=movements.filter(item=>String(item.transactionDate||'').startsWith(month)&&(!chartWarehouse||item.warehouseGroup===chartWarehouse));return{label:`เดือนที่ ${index+1} · ${month}`,month,รับเข้า:monthly.reduce((sum,item)=>sum+(+item.quantityIn||0),0),จ่ายออก:monthly.reduce((sum,item)=>sum+(+item.quantityOut||0),0)}}),[movements,chartWarehouse,chartMonth,compareMonth]);
-  const chartTotals=useMemo(()=>chartData.reduce((total,item)=>({receive:total.receive+item.รับเข้า,issue:total.issue+item.จ่ายออก}),{receive:0,issue:0}),[chartData]);
+export default function DashboardPage() {
+  const { products, movements, lots } = useApp(),
+    nav = useNavigate();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const previousMonth = (() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date.toISOString().slice(0, 7);
+  })();
+  const [chartWarehouse, setChartWarehouse] = useState(""),
+    [chartMode, setChartMode] = useState("both"),
+    [chartMonth, setChartMonth] = useState(previousMonth),
+    [compareMonth, setCompareMonth] = useState(currentMonth);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTime = today.getTime();
+  const todayIso = today.toISOString().slice(0, 10);
+  const stats = useMemo(
+    () => ({
+      stock: products.reduce((a, p) => a + p.currentStock, 0),
+      low: products.filter((p) => stockStatus(p) === "ใกล้หมด").length,
+      out: products.filter((p) => p.currentStock === 0).length,
+      receive: movements
+        .filter(
+          (m) =>
+            m.transactionDate === todayIso && m.transactionType === "RECEIVE",
+        )
+        .reduce((a, m) => a + m.quantityIn, 0),
+      issue: movements
+        .filter(
+          (m) =>
+            m.transactionDate === todayIso && m.transactionType === "ISSUE",
+        )
+        .reduce((a, m) => a + m.quantityOut, 0),
+      transfer: movements
+        .filter(
+          (m) =>
+            m.transactionDate === todayIso &&
+            m.transactionType === "TRANSFER_OUT",
+        )
+        .reduce((a, m) => a + m.quantityOut, 0),
+    }),
+    [products, movements, todayIso],
+  );
+  const shelfLife = useMemo(
+    () =>
+      lots
+        .filter((lot) => lot.quantityRemaining > 0)
+        .map((lot) => {
+          const expiry = parseLotDate(lot.lotNo);
+          return expiry
+            ? {
+                ...lot,
+                expiry,
+                daysLeft: Math.ceil((expiry.getTime() - todayTime) / dayMs),
+              }
+            : null;
+        })
+        .filter(Boolean)
+        .filter((lot) => lot.daysLeft <= 3)
+        .sort((a, b) => a.daysLeft - b.daysLeft),
+    [lots, todayTime],
+  );
+  const expired = shelfLife.filter((lot) => lot.daysLeft < 0).length,
+    warning = shelfLife.filter((lot) => lot.daysLeft >= 0).length;
+  const cards = [
+    [Warehouse, "กลุ่มคลังทั้งหมด", 5, "คลัง", "blue", "/warehouse-map/all"],
+    [
+      Boxes,
+      "สินค้าทั้งหมด",
+      products.length,
+      "รายการ",
+      "purple",
+      "/stock-card",
+    ],
+    [
+      PackageCheck,
+      "Stock คงเหลือรวม",
+      fmt(stats.stock),
+      "หน่วย",
+      "green",
+      "/stock-card",
+    ],
+    [
+      ArrowDownToLine,
+      "รับเข้าวันนี้",
+      fmt(stats.receive),
+      "หน่วย",
+      "green",
+      `/stock-card?type=RECEIVE&from=${todayIso}&to=${todayIso}`,
+    ],
+    [
+      ArrowUpFromLine,
+      "จ่ายออกวันนี้",
+      fmt(stats.issue),
+      "หน่วย",
+      "orange",
+      `/stock-card?type=ISSUE&from=${todayIso}&to=${todayIso}`,
+    ],
+    [
+      ArrowRightLeft,
+      "โอนคลังวันนี้",
+      fmt(stats.transfer),
+      "หน่วย",
+      "purple",
+      `/stock-card?type=TRANSFER&from=${todayIso}&to=${todayIso}`,
+    ],
+    [
+      TriangleAlert,
+      "สินค้าใกล้หมด",
+      stats.low,
+      "รายการ",
+      "orange",
+      "/stock-card?status=low",
+    ],
+    [
+      PackageX,
+      "สินค้าหมด",
+      stats.out,
+      "รายการ",
+      "red",
+      "/stock-card?status=out",
+    ],
+  ];
+  const chartData = useMemo(
+    () =>
+      [chartMonth, compareMonth].map((month, index) => {
+        const monthly = movements.filter(
+          (item) =>
+            String(item.transactionDate || "").startsWith(month) &&
+            (!chartWarehouse || item.warehouseGroup === chartWarehouse),
+        );
+        return {
+          label: `เดือนที่ ${index + 1} · ${month}`,
+          month,
+          รับเข้า: monthly.reduce(
+            (sum, item) => sum + (+item.quantityIn || 0),
+            0,
+          ),
+          จ่ายออก: monthly.reduce(
+            (sum, item) => sum + (+item.quantityOut || 0),
+            0,
+          ),
+        };
+      }),
+    [movements, chartWarehouse, chartMonth, compareMonth],
+  );
+  const chartTotals = useMemo(
+    () =>
+      chartData.reduce(
+        (total, item) => ({
+          receive: total.receive + item.รับเข้า,
+          issue: total.issue + item.จ่ายออก,
+        }),
+        { receive: 0, issue: 0 },
+      ),
+    [chartData],
+  );
 
-  return <>
-    <PageHeader title="ภาพรวมคลังสินค้า" subtitle="ข้อมูลการดำเนินงานล่าสุดของ CSP Foods Supply"/>
-    <div className="stats-grid">{cards.map(([Icon,label,value,unit,color])=><StatCard key={label} icon={Icon} label={label} value={value} unit={unit} color={color}/>)}</div>
-    <section className={`shelf-alert ${expired?'critical':warning?'warning':'safe'}`}>
-      <div className="shelf-alert-head"><div className="shelf-icon"><CalendarClock/></div><div><span className="eyebrow">SHELF LIFE CONTROL</span><h2>แจ้งเตือน Shelf Life ล่วงหน้า 3 วัน</h2><p>ตรวจจากวันที่ใน Lot และแสดงเฉพาะสินค้าที่ยังมียอดคงเหลือ</p></div><div className="shelf-counters"><span className="expired"><b>{expired}</b> หมดอายุ</span><span className="urgent"><b>{warning}</b> ต้องรีบจัดการ</span></div></div>
-      <div className="shelf-table-wrap">{shelfLife.length?<table><thead><tr><th>ระดับ</th><th>สินค้า</th><th>คลัง</th><th>Lot / วันหมดอายุ</th><th>คงเหลือ</th><th>สถานะ Shelf Life</th><th></th></tr></thead><tbody>{shelfLife.slice(0,10).map(lot=><tr key={lot.id} className={lot.daysLeft<0?'expired-row':''}><td><span className={`shelf-pulse ${lot.daysLeft<0?'red':'amber'}`}/></td><td><b>{lot.productName}</b><small>{lot.productCode}</small></td><td>{lot.warehouseGroup}</td><td><b>{lot.lotNo}</b><small>วันที่ใน Lot</small></td><td><b>{fmt(lot.quantityRemaining)}</b> <small>{products.find(product=>product.id===lot.productId)?.unit||'หน่วย'}</small></td><td><span className={`shelf-status ${lot.daysLeft<0?'expired':'urgent'}`}><ShieldAlert/>{shelfLabel(lot.daysLeft)}</span></td><td><button className="shelf-action" onClick={()=>nav(`/stock-card?product=${lot.productId}`)}>ตรวจสอบ <ArrowUpRight/></button></td></tr>)}</tbody></table>:<div className="shelf-empty"><PackageCheck/><div><b>ไม่มีสินค้าใกล้หมดอายุ</b><span>ทุกรายการมี Shelf Life มากกว่า 3 วัน</span></div></div>}</div>
-    </section>
-    <div className="card chart-card"><div className="card-title dashboard-chart-head"><div><h2>เปรียบเทียบเดือนต่อเดือน</h2><p>{chartWarehouse||'ทุกคลัง'} · รับรวม {fmt(chartTotals.receive)} / จ่ายรวม {fmt(chartTotals.issue)}</p>{chartMonth===compareMonth&&<span className="same-month-note">ขณะนี้เลือกเดือนเดียวกันทั้ง 2 ช่อง ผลลัพธ์จึงเท่ากัน</span>}</div><div className="dashboard-chart-filters"><label>คลัง<select value={chartWarehouse} onChange={event=>setChartWarehouse(event.target.value)}><option value="">ทุกคลัง</option>{warehouseGroups.map(group=><option key={group.id} value={group.id}>{group.name}</option>)}</select></label><label>ข้อมูล<select value={chartMode} onChange={event=>setChartMode(event.target.value)}><option value="both">รับและจ่าย</option><option value="receive">รับเข้า</option><option value="issue">จ่ายออก</option></select></label><label>เดือนที่ 1<input type="month" value={chartMonth} onChange={event=>setChartMonth(event.target.value||previousMonth)}/></label><label>เทียบกับเดือนที่ 2<input type="month" value={compareMonth} onChange={event=>setCompareMonth(event.target.value||currentMonth)}/></label></div></div><ResponsiveContainer width="100%" height={320}><ComposedChart data={chartData} barCategoryGap="48%" barGap={10} margin={{top:28,right:28,left:8,bottom:8}}><defs><linearGradient id="receiveBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6fd18b"/><stop offset="100%" stopColor="#16a34a"/></linearGradient><linearGradient id="issueBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f87171"/><stop offset="100%" stopColor="#dc2626"/></linearGradient></defs><CartesianGrid strokeDasharray="3 4" vertical={false} stroke="#d7dde6"/><XAxis dataKey="label" tick={{fontSize:11,fill:'#475569'}} tickLine={false} axisLine={{stroke:'#94a3b8'}}/><YAxis width={58} tickFormatter={value=>fmt(value)} tick={{fill:'#64748b'}}/><Tooltip labelFormatter={(_,payload)=>payload?.[0]?.payload?.month||''} formatter={(value,name)=>[fmt(value),name]}/><Legend wrapperStyle={{paddingTop:10}}/>{chartMode!=='issue'&&<Bar dataKey="รับเข้า" fill="url(#receiveBar)" maxBarSize={74} radius={[10,10,4,4]}/>} {chartMode!=='receive'&&<Bar dataKey="จ่ายออก" fill="url(#issueBar)" maxBarSize={74} radius={[10,10,4,4]}/>} {chartMode!=='issue'&&<Line type="monotone" dataKey="รับเข้า" name="แนวโน้มรับเข้า" stroke="#16a34a" strokeWidth={3} dot={{r:6,fill:'#16a34a',stroke:'#fff',strokeWidth:2}} activeDot={{r:8}} legendType="none"/>} {chartMode!=='receive'&&<Line type="monotone" dataKey="จ่ายออก" name="แนวโน้มจ่ายออก" stroke="#dc2626" strokeWidth={3} dot={{r:6,fill:'#dc2626',stroke:'#fff',strokeWidth:2}} activeDot={{r:8}} legendType="none"/>}</ComposedChart></ResponsiveContainer></div>
-    <div className="two-col"><div className="card"><div className="card-title"><h2>สรุปกลุ่มคลัง</h2></div><div className="table-wrap"><table><thead><tr><th>กลุ่มคลัง</th><th>สินค้า</th><th>Stock</th><th>สถานะ</th><th></th></tr></thead><tbody>{warehouseGroups.map(group=>{const groupProducts=products.filter(product=>product.warehouseGroup===group.id),out=groupProducts.filter(product=>product.currentStock===0).length;return <tr key={group.id}><td><b>{group.name}</b></td><td>{groupProducts.length}</td><td>{fmt(groupProducts.reduce((sum,product)=>sum+product.currentStock,0))}</td><td><StatusBadge status={out?'ใกล้หมด':'ปกติ'}/></td><td><button className="link-btn" onClick={()=>nav(`/warehouse/${group.path}`)}><ArrowUpRight/></button></td></tr>})}</tbody></table></div></div><div className="card"><div className="card-title"><h2>ความเคลื่อนไหวล่าสุด</h2></div><div className="movement-list">{movements.slice(0,7).map(movement=><div key={movement.id}><span className={`movement-dot ${movement.transactionType.toLowerCase()}`}/><div><b>{movement.productName}</b><small>{movement.documentNo} · {movement.warehouseGroup}</small></div><div className={movement.quantityIn?'qty-in':'qty-out'}>{movement.quantityIn?'+':'-'}{fmt(movement.quantityIn||movement.quantityOut)}<small>{movementLabels[movement.transactionType]}</small></div></div>)}{!movements.length&&<Empty/>}</div></div></div>
-  </>;
+  return (
+    <>
+      <PageHeader
+        title="ภาพรวมคลังสินค้า"
+        subtitle="ข้อมูลการดำเนินงานล่าสุดของ CSP Foods Supply"
+      />
+      <div className="stats-grid">
+        {cards.map(([Icon, label, value, unit, color, to]) => (
+          <StatCard
+            key={label}
+            icon={Icon}
+            label={label}
+            value={value}
+            unit={unit}
+            color={color}
+            onClick={() => nav(to)}
+          />
+        ))}
+      </div>
+      <section
+        className={`shelf-alert ${expired ? "critical" : warning ? "warning" : "safe"}`}
+      >
+        <div className="shelf-alert-head">
+          <div className="shelf-icon">
+            <CalendarClock />
+          </div>
+          <div>
+            <span className="eyebrow">SHELF LIFE CONTROL</span>
+            <h2>แจ้งเตือน Shelf Life ล่วงหน้า 3 วัน</h2>
+            <p>ตรวจจากวันที่ใน Lot และแสดงเฉพาะสินค้าที่ยังมียอดคงเหลือ</p>
+          </div>
+          <div className="shelf-counters">
+            <span className="expired">
+              <b>{expired}</b> หมดอายุ
+            </span>
+            <span className="urgent">
+              <b>{warning}</b> ต้องรีบจัดการ
+            </span>
+          </div>
+        </div>
+        <div className="shelf-table-wrap">
+          {shelfLife.length ? (
+            <table>
+              <thead>
+                <tr>
+                  <th>ระดับ</th>
+                  <th>สินค้า</th>
+                  <th>คลัง</th>
+                  <th>Lot / วันหมดอายุ</th>
+                  <th>คงเหลือ</th>
+                  <th>สถานะ Shelf Life</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {shelfLife.slice(0, 10).map((lot) => (
+                  <tr
+                    key={lot.id}
+                    className={lot.daysLeft < 0 ? "expired-row" : ""}
+                  >
+                    <td>
+                      <span
+                        className={`shelf-pulse ${lot.daysLeft < 0 ? "red" : "amber"}`}
+                      />
+                    </td>
+                    <td>
+                      <b>{lot.productName}</b>
+                      <small>{lot.productCode}</small>
+                    </td>
+                    <td>{lot.warehouseGroup}</td>
+                    <td>
+                      <b>{lot.lotNo}</b>
+                      <small>วันที่ใน Lot</small>
+                    </td>
+                    <td>
+                      <b>{fmt(lot.quantityRemaining)}</b>{" "}
+                      <small>
+                        {products.find(
+                          (product) => product.id === lot.productId,
+                        )?.unit || "หน่วย"}
+                      </small>
+                    </td>
+                    <td>
+                      <span
+                        className={`shelf-status ${lot.daysLeft < 0 ? "expired" : "urgent"}`}
+                      >
+                        <ShieldAlert />
+                        {shelfLabel(lot.daysLeft)}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="shelf-action"
+                        onClick={() =>
+                          nav(`/stock-card?product=${lot.productId}`)
+                        }
+                      >
+                        ตรวจสอบ <ArrowUpRight />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="shelf-empty">
+              <PackageCheck />
+              <div>
+                <b>ไม่มีสินค้าใกล้หมดอายุ</b>
+                <span>ทุกรายการมี Shelf Life มากกว่า 3 วัน</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+      <div className="card chart-card">
+        <div className="card-title dashboard-chart-head">
+          <div>
+            <h2>เปรียบเทียบเดือนต่อเดือน</h2>
+            <p>
+              {chartWarehouse || "ทุกคลัง"} · รับรวม {fmt(chartTotals.receive)}{" "}
+              / จ่ายรวม {fmt(chartTotals.issue)}
+            </p>
+            {chartMonth === compareMonth && (
+              <span className="same-month-note">
+                ขณะนี้เลือกเดือนเดียวกันทั้ง 2 ช่อง ผลลัพธ์จึงเท่ากัน
+              </span>
+            )}
+          </div>
+          <div className="dashboard-chart-filters">
+            <label>
+              คลัง
+              <select
+                value={chartWarehouse}
+                onChange={(event) => setChartWarehouse(event.target.value)}
+              >
+                <option value="">ทุกคลัง</option>
+                {warehouseGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              ข้อมูล
+              <select
+                value={chartMode}
+                onChange={(event) => setChartMode(event.target.value)}
+              >
+                <option value="both">รับและจ่าย</option>
+                <option value="receive">รับเข้า</option>
+                <option value="issue">จ่ายออก</option>
+              </select>
+            </label>
+            <label>
+              เดือนที่ 1
+              <input
+                type="month"
+                value={chartMonth}
+                onChange={(event) =>
+                  setChartMonth(event.target.value || previousMonth)
+                }
+              />
+            </label>
+            <label>
+              เทียบกับเดือนที่ 2
+              <input
+                type="month"
+                value={compareMonth}
+                onChange={(event) =>
+                  setCompareMonth(event.target.value || currentMonth)
+                }
+              />
+            </label>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={320}>
+          <ComposedChart
+            data={chartData}
+            barCategoryGap="48%"
+            barGap={10}
+            margin={{ top: 28, right: 28, left: 8, bottom: 8 }}
+          >
+            <defs>
+              <linearGradient id="receiveBar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#6fd18b" />
+                <stop offset="100%" stopColor="#16a34a" />
+              </linearGradient>
+              <linearGradient id="issueBar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f87171" />
+                <stop offset="100%" stopColor="#dc2626" />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 4"
+              vertical={false}
+              stroke="#d7dde6"
+            />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: "#475569" }}
+              tickLine={false}
+              axisLine={{ stroke: "#94a3b8" }}
+            />
+            <YAxis
+              width={58}
+              tickFormatter={(value) => fmt(value)}
+              tick={{ fill: "#64748b" }}
+            />
+            <Tooltip
+              labelFormatter={(_, payload) =>
+                payload?.[0]?.payload?.month || ""
+              }
+              formatter={(value, name) => [fmt(value), name]}
+            />
+            <Legend wrapperStyle={{ paddingTop: 10 }} />
+            {chartMode !== "issue" && (
+              <Bar
+                dataKey="รับเข้า"
+                fill="url(#receiveBar)"
+                maxBarSize={74}
+                radius={[10, 10, 4, 4]}
+              />
+            )}{" "}
+            {chartMode !== "receive" && (
+              <Bar
+                dataKey="จ่ายออก"
+                fill="url(#issueBar)"
+                maxBarSize={74}
+                radius={[10, 10, 4, 4]}
+              />
+            )}{" "}
+            {chartMode !== "issue" && (
+              <Line
+                type="monotone"
+                dataKey="รับเข้า"
+                name="แนวโน้มรับเข้า"
+                stroke="#16a34a"
+                strokeWidth={3}
+                dot={{ r: 6, fill: "#16a34a", stroke: "#fff", strokeWidth: 2 }}
+                activeDot={{ r: 8 }}
+                legendType="none"
+              />
+            )}{" "}
+            {chartMode !== "receive" && (
+              <Line
+                type="monotone"
+                dataKey="จ่ายออก"
+                name="แนวโน้มจ่ายออก"
+                stroke="#dc2626"
+                strokeWidth={3}
+                dot={{ r: 6, fill: "#dc2626", stroke: "#fff", strokeWidth: 2 }}
+                activeDot={{ r: 8 }}
+                legendType="none"
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="two-col">
+        <div className="card">
+          <div className="card-title">
+            <h2>สรุปกลุ่มคลัง</h2>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>กลุ่มคลัง</th>
+                  <th>สินค้า</th>
+                  <th>Stock</th>
+                  <th>สถานะ</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {warehouseGroups.map((group) => {
+                  const groupProducts = products.filter(
+                      (product) => product.warehouseGroup === group.id,
+                    ),
+                    out = groupProducts.filter(
+                      (product) => product.currentStock === 0,
+                    ).length;
+                  return (
+                    <tr key={group.id}>
+                      <td>
+                        <b>{group.name}</b>
+                      </td>
+                      <td>{groupProducts.length}</td>
+                      <td>
+                        {fmt(
+                          groupProducts.reduce(
+                            (sum, product) => sum + product.currentStock,
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td>
+                        <StatusBadge status={out ? "ใกล้หมด" : "ปกติ"} />
+                      </td>
+                      <td>
+                        <button
+                          className="link-btn"
+                          onClick={() => nav(`/warehouse/${group.path}`)}
+                        >
+                          <ArrowUpRight />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-title">
+            <h2>ความเคลื่อนไหวล่าสุด</h2>
+          </div>
+          <div className="movement-list">
+            {movements.slice(0, 7).map((movement) => (
+              <div key={movement.id}>
+                <span
+                  className={`movement-dot ${movement.transactionType.toLowerCase()}`}
+                />
+                <div>
+                  <b>{movement.productName}</b>
+                  <small>
+                    {movement.documentNo} · {movement.warehouseGroup}
+                  </small>
+                </div>
+                <div className={movement.quantityIn ? "qty-in" : "qty-out"}>
+                  {movement.quantityIn ? "+" : "-"}
+                  {fmt(movement.quantityIn || movement.quantityOut)}
+                  <small>{movementLabels[movement.transactionType]}</small>
+                </div>
+              </div>
+            ))}
+            {!movements.length && <Empty />}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }

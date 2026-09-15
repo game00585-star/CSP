@@ -1,69 +1,1019 @@
-import {useMemo,useState} from 'react';
-import {Plus,Trash2,Save,CheckCircle2,ArrowDownToLine,ArrowUpFromLine,ArrowRightLeft,Printer,Search,TriangleAlert} from 'lucide-react';
-import {useApp} from '../context/AppContext';
-import {warehouseGroups} from '../data/constants';
-import {docNo,fmt,printHtml} from '../utils/helpers';
-import {PageHeader,ConfirmModal,Modal} from '../components/common';
+import { useMemo, useState } from "react";
+import {
+  Plus,
+  Trash2,
+  Save,
+  CheckCircle2,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ArrowRightLeft,
+  Printer,
+  Search,
+  TriangleAlert,
+} from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { warehouseGroups } from "../data/constants";
+import {
+  convertQuantity,
+  docNo,
+  fmt,
+  printHtml,
+  unitsCompatible,
+} from "../utils/helpers";
+import { PageHeader, ConfirmModal, Modal } from "../components/common";
 
-const config={
-  receive:{title:'รับสินค้าเข้าคลัง',documentTitle:'ใบรับสินค้าเข้าคลัง',sub:'บันทึกรายการรับและเพิ่มยอด Stock',prefix:'RCV',date:'วันที่รับสินค้า',action:'ยืนยันรับสินค้า',Icon:ArrowDownToLine,signatures:['ผู้ส่งมอบ','ผู้รับสินค้า','ผู้ตรวจสอบ']},
-  issue:{title:'จ่ายสินค้าออกจากคลัง',documentTitle:'ใบจ่ายสินค้าออกจากคลัง',sub:'ควบคุมการเบิกจ่ายและตรวจสอบ Stock',prefix:'ISS',date:'วันที่จ่ายสินค้า',action:'ยืนยันจ่ายสินค้า',Icon:ArrowUpFromLine,signatures:['ผู้จ่ายสินค้า','ผู้รับสินค้า','ผู้อนุมัติ']},
-  transfer:{title:'โอนระหว่างคลัง',documentTitle:'ใบโอนสินค้าระหว่างคลัง',sub:'เคลื่อนย้ายสินค้าและบันทึกสองฝั่งอัตโนมัติ',prefix:'TRF',date:'วันที่โอน',action:'ยืนยันการโอน',Icon:ArrowRightLeft,signatures:['ผู้โอนสินค้า','ผู้รับโอน','ผู้อนุมัติ']},
+const config = {
+  receive: {
+    title: "รับสินค้าเข้าคลัง",
+    documentTitle: "ใบรับสินค้าเข้าคลัง",
+    sub: "บันทึกรายการรับและเพิ่มยอด Stock",
+    prefix: "RCV",
+    date: "วันที่รับสินค้า",
+    action: "ยืนยันรับสินค้า",
+    Icon: ArrowDownToLine,
+    signatures: ["ผู้ส่งมอบ", "ผู้รับสินค้า", "ผู้ตรวจสอบ"],
+  },
+  issue: {
+    title: "จ่ายสินค้าออกจากคลัง",
+    documentTitle: "ใบจ่ายสินค้าออกจากคลัง",
+    sub: "ควบคุมการเบิกจ่ายและตรวจสอบ Stock",
+    prefix: "ISS",
+    date: "วันที่จ่ายสินค้า",
+    action: "ยืนยันจ่ายสินค้า",
+    Icon: ArrowUpFromLine,
+    signatures: ["ผู้จ่ายสินค้า", "ผู้รับสินค้า", "ผู้อนุมัติ"],
+  },
+  transfer: {
+    title: "โอนระหว่างคลัง",
+    documentTitle: "ใบโอนสินค้าระหว่างคลัง",
+    sub: "เคลื่อนย้ายสินค้าและบันทึกสองฝั่งอัตโนมัติ",
+    prefix: "TRF",
+    date: "วันที่โอน",
+    action: "ยืนยันการโอน",
+    Icon: ArrowRightLeft,
+    signatures: ["ผู้โอนสินค้า", "ผู้รับโอน", "ผู้อนุมัติ"],
+  },
 };
-const normalizeLotDate=value=>{const text=String(value||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(text))return text;const match=text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);return match?`${match[3]}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}`:''};
-const packWeight=name=>{const match=String(name||'').match(/(\d+(?:[.,]\d+)?)\s*(?:กก\.?|kg)/i);return match?+match[1].replace(',','.') : 0};
+const normalizeLotDate = (value) => {
+  const text = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const match = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  return match
+    ? `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`
+    : "";
+};
+const packWeight = (name) => {
+  const match = String(name || "").match(/(\d+(?:[.,]\d+)?)\s*(?:กก\.?|kg)/i);
+  return match ? +match[1].replace(",", ".") : 0;
+};
 
-export default function TransactionPage({type}){
-  const c=config[type],{products,lots,storageLocations,activePeriod,receive,issue,transfer,addDocument,setToast}=useApp();
-  const [doc]=useState(()=>docNo(c.prefix)),[date,setDate]=useState(new Date().toISOString().slice(0,10));
-  const [group,setGroup]=useState('RM'),[dest,setDest]=useState('FG-CUT'),[supplier,setSupplier]=useState('บริษัท ซัพพลายเออร์ จำกัด');
-  const [ref,setRef]=useState(''),[remark,setRemark]=useState(''),[items,setItems]=useState([]),[productId,setProductId]=useState(''),[productSearch,setProductSearch]=useState('');
-  const [confirm,setConfirm]=useState(false),[error,setError]=useState(''),[printDocument,setPrintDocument]=useState(null),[showResults,setShowResults]=useState(false);
-  const available=useMemo(()=>products.filter(product=>product.warehouseGroup===group&&product.active&&!items.some(item=>item.id===product.id)&&(!productSearch||`${product.productName} ${product.productCode} ${product.barcode||''}`.toLowerCase().includes(productSearch.toLowerCase()))),[products,group,items,productSearch]);
-  const productLots=(id,locationId='')=>lots.filter(lot=>lot.productId===id&&lot.warehouseGroup===group&&lot.quantityRemaining>0&&(!locationId||lot.locationId===locationId)).sort((a,b)=>a.receivedDate.localeCompare(b.receivedDate));
-  const productLocations=product=>storageLocations.filter(location=>location.warehouseGroup===group&&location.active&&(type==='receive'||lots.some(lot=>lot.productId===product.id&&lot.locationId===location.id&&lot.quantityRemaining>0)));
-  const add=()=>{const product=available.find(item=>item.id===productId);if(!product){setError('กรุณาเลือกสินค้าที่ต้องการเพิ่ม');return}const firstLocation=productLocations(product)[0],firstLot=productLots(product.id,firstLocation?.id)[0],firstDest=storageLocations.find(location=>location.warehouseGroup===dest&&location.active);setItems(current=>[...current,{...product,qty:1,price:0,lotNo:'',lotDate:normalizeLotDate(firstLot?.lotNo)||firstLot?.receivedDate||'',locationId:firstLocation?.id||'',destLocationId:type==='transfer'?firstDest?.id||'':'',lotId:firstLot?.id||''}]);setProductId('');setProductSearch('');setError('')};
-  const update=(id,key,value)=>setItems(current=>current.map(item=>item.id===id?{...item,[key]:['qty','price'].includes(key)?+value:value}:item));
-  const locationUsage=id=>lots.filter(lot=>lot.locationId===id&&lot.quantityRemaining>0).reduce((sum,lot)=>sum+(+lot.quantityRemaining||0),0);
-  const isPackConversion=item=>type==='receive'&&group==='FG-PACK'&&item.unit==='แพ็ค';
-  const stockQty=item=>isPackConversion(item)&&packWeight(item.productName)?+(item.qty/packWeight(item.productName)).toFixed(2):item.qty;
-  const overItems=items.filter(item=>{const location=storageLocations.find(entry=>entry.id===item.locationId);return type==='receive'&&location&&locationUsage(location.id)+stockQty(item)>location.capacity});
-  const invalid=items.some(item=>{const lot=lots.find(entry=>entry.id===item.lotId),location=storageLocations.find(entry=>entry.id===item.locationId),destLocation=storageLocations.find(entry=>entry.id===item.destLocationId&&entry.warehouseGroup===dest),destOver=type==='transfer'&&destLocation&&locationUsage(destLocation.id)+item.qty>destLocation.capacity,missingWeight=isPackConversion(item)&&!packWeight(item.productName);return item.qty<=0||!location||missingWeight||(type==='transfer'&&(!destLocation||destOver))||(type==='receive'?!item.lotNo.trim():!lot||item.qty>item.currentStock||item.qty>lot.quantityRemaining)})||!items.length||(type==='transfer'&&group===dest)||!activePeriod||activePeriod.month!==date.slice(0,7);
-  const submit=()=>{try{const documentItems=items.map(item=>{const lot=lots.find(entry=>entry.id===item.lotId),location=storageLocations.find(entry=>entry.id===item.locationId),destLocation=storageLocations.find(entry=>entry.id===item.destLocationId),converted=stockQty(item);return{...item,qty:converted,receivedKg:isPackConversion(item)?item.qty:null,kgPerPack:isPackConversion(item)?packWeight(item.productName):null,locationName:location?.name,destinationLocationName:destLocation?.name,lotNo:type==='receive'?item.lotNo:lot?.lotNo,receivedDate:type==='receive'?date:lot?.receivedDate,lotRemaining:type==='receive'?converted:(lot?.quantityRemaining||0)-item.qty}});const documentData={type,title:c.documentTitle,documentNo:doc,date,group,destination:dest,partner:type==='transfer'?dest:supplier,reference:ref,remark,userName:'ผู้ดูแลระบบ',items:documentItems,signatures:c.signatures};items.forEach(item=>type==='receive'?receive(item.id,stockQty(item),doc,remark,{lotNo:item.lotNo,date,locationId:item.locationId,receivedKg:isPackConversion(item)?item.qty:null,kgPerPack:isPackConversion(item)?packWeight(item.productName):null}):type==='issue'?issue(item.id,item.qty,doc,remark,{lotId:item.lotId,date}):transfer(item.id,item.qty,dest,doc,{lotId:item.lotId,date,destLocationId:item.destLocationId}));addDocument(documentData);setPrintDocument(documentData);setItems([]);setProductId('');setProductSearch('');setConfirm(false);setError('')}catch(submitError){setError(submitError.message);setConfirm(false)}};
-  const totalQty=items.reduce((sum,item)=>sum+stockQty(item),0),totalKg=items.reduce((sum,item)=>sum+(isPackConversion(item)?item.qty:0),0),totalValue=items.reduce((sum,item)=>sum+stockQty(item)*item.price,0);
+export default function TransactionPage({ type }) {
+  const c = config[type],
+    {
+      products,
+      lots,
+      storageLocations,
+      activePeriod,
+      receive,
+      issue,
+      transfer,
+      addDocument,
+      setToast,
+    } = useApp();
+  const [doc] = useState(() => docNo(c.prefix)),
+    [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [group, setGroup] = useState("RM"),
+    [dest, setDest] = useState("FG-CUT"),
+    [supplier, setSupplier] = useState("บริษัท ซัพพลายเออร์ จำกัด");
+  const [ref, setRef] = useState(""),
+    [remark, setRemark] = useState(""),
+    [items, setItems] = useState([]),
+    [productId, setProductId] = useState(""),
+    [productSearch, setProductSearch] = useState("");
+  const [confirm, setConfirm] = useState(false),
+    [error, setError] = useState(""),
+    [printDocument, setPrintDocument] = useState(null),
+    [showResults, setShowResults] = useState(false);
+  const available = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          product.warehouseGroup === group &&
+          product.active &&
+          !items.some((item) => item.id === product.id) &&
+          (!productSearch ||
+            `${product.productName} ${product.productCode} ${product.barcode || ""}`
+              .toLowerCase()
+              .includes(productSearch.toLowerCase())),
+      ),
+    [products, group, items, productSearch],
+  );
+  const productLots = (id, locationId = "") =>
+    lots
+      .filter(
+        (lot) =>
+          lot.productId === id &&
+          lot.warehouseGroup === group &&
+          lot.quantityRemaining > 0 &&
+          (!locationId || lot.locationId === locationId),
+      )
+      .sort((a, b) => a.receivedDate.localeCompare(b.receivedDate));
+  const productLocations = (product) =>
+    storageLocations.filter(
+      (location) =>
+        location.warehouseGroup === group &&
+        location.active &&
+        unitsCompatible(product.unit, location.unit) &&
+        (type === "receive" ||
+          lots.some(
+            (lot) =>
+              lot.productId === product.id &&
+              lot.locationId === location.id &&
+              lot.quantityRemaining > 0,
+          )),
+    );
+  const add = () => {
+    const product = available.find((item) => item.id === productId);
+    if (!product) {
+      setError("กรุณาเลือกสินค้าที่ต้องการเพิ่ม");
+      return;
+    }
+    const firstLocation = productLocations(product)[0],
+      firstLot = productLots(product.id, firstLocation?.id)[0],
+      firstDest = storageLocations.find(
+        (location) => location.warehouseGroup === dest && location.active,
+      );
+    setItems((current) => [
+      ...current,
+      {
+        ...product,
+        qty: 1,
+        price: 0,
+        lotNo: "",
+        lotDate:
+          normalizeLotDate(firstLot?.lotNo) || firstLot?.receivedDate || "",
+        locationId: firstLocation?.id || "",
+        destLocationId: type === "transfer" ? firstDest?.id || "" : "",
+        lotId: firstLot?.id || "",
+      },
+    ]);
+    setProductId("");
+    setProductSearch("");
+    setError("");
+  };
+  const update = (id, key, value) =>
+    setItems((current) =>
+      current.map((item) =>
+        item.id === id
+          ? { ...item, [key]: ["qty", "price"].includes(key) ? +value : value }
+          : item,
+      ),
+    );
+  const locationUsage = (id) => {
+    const location = storageLocations.find((entry) => entry.id === id);
+    if (!location) return 0;
+    return lots
+      .filter((lot) => lot.locationId === id && lot.quantityRemaining > 0)
+      .reduce((sum, lot) => {
+        const lotProduct = products.find(
+          (product) => product.id === lot.productId,
+        );
+        return (
+          sum +
+          convertQuantity(
+            lot.quantityRemaining,
+            lotProduct?.unit,
+            location.unit,
+          )
+        );
+      }, 0);
+  };
+  const isPackConversion = (item) =>
+    type === "receive" && group === "FG-PACK" && item.unit === "แพ็ค";
+  const stockQty = (item) =>
+    isPackConversion(item) && packWeight(item.productName)
+      ? +(item.qty / packWeight(item.productName)).toFixed(2)
+      : item.qty;
+  const quantityForLocation = (item, location) =>
+    convertQuantity(stockQty(item), item.unit, location?.unit);
+  const overItems = items.filter((item) => {
+    const location = storageLocations.find(
+      (entry) => entry.id === item.locationId,
+    );
+    return (
+      type === "receive" &&
+      location &&
+      locationUsage(location.id) + quantityForLocation(item, location) >
+        location.capacity
+    );
+  });
+  const invalid =
+    items.some((item) => {
+      const lot = lots.find((entry) => entry.id === item.lotId),
+        location = storageLocations.find(
+          (entry) => entry.id === item.locationId,
+        ),
+        destLocation = storageLocations.find(
+          (entry) =>
+            entry.id === item.destLocationId && entry.warehouseGroup === dest,
+        ),
+        destOver =
+          type === "transfer" &&
+          destLocation &&
+          locationUsage(destLocation.id) +
+            quantityForLocation(item, destLocation) >
+            destLocation.capacity,
+        missingWeight = isPackConversion(item) && !packWeight(item.productName);
+      return (
+        item.qty <= 0 ||
+        !location ||
+        missingWeight ||
+        (type === "transfer" &&
+          (!destLocation ||
+            !unitsCompatible(item.unit, destLocation.unit) ||
+            destOver)) ||
+        (type === "receive"
+          ? !item.lotNo.trim()
+          : !lot ||
+            item.qty > item.currentStock ||
+            item.qty > lot.quantityRemaining)
+      );
+    }) ||
+    !items.length ||
+    (type === "transfer" && group === dest) ||
+    !activePeriod ||
+    activePeriod.month !== date.slice(0, 7);
+  const submit = () => {
+    try {
+      const documentItems = items.map((item) => {
+        const lot = lots.find((entry) => entry.id === item.lotId),
+          location = storageLocations.find(
+            (entry) => entry.id === item.locationId,
+          ),
+          destLocation = storageLocations.find(
+            (entry) => entry.id === item.destLocationId,
+          ),
+          converted = stockQty(item);
+        return {
+          ...item,
+          qty: converted,
+          receivedKg: isPackConversion(item) ? item.qty : null,
+          kgPerPack: isPackConversion(item)
+            ? packWeight(item.productName)
+            : null,
+          locationName: location?.name,
+          destinationLocationName: destLocation?.name,
+          lotNo: type === "receive" ? item.lotNo : lot?.lotNo,
+          receivedDate: type === "receive" ? date : lot?.receivedDate,
+          lotRemaining:
+            type === "receive"
+              ? converted
+              : (lot?.quantityRemaining || 0) - item.qty,
+        };
+      });
+      const documentData = {
+        type,
+        title: c.documentTitle,
+        documentNo: doc,
+        date,
+        group,
+        destination: dest,
+        partner: type === "transfer" ? dest : supplier,
+        reference: ref,
+        remark,
+        userName: "ผู้ดูแลระบบ",
+        items: documentItems,
+        signatures: c.signatures,
+      };
+      items.forEach((item) =>
+        type === "receive"
+          ? receive(item.id, stockQty(item), doc, remark, {
+              lotNo: item.lotNo,
+              date,
+              locationId: item.locationId,
+              receivedKg: isPackConversion(item) ? item.qty : null,
+              kgPerPack: isPackConversion(item)
+                ? packWeight(item.productName)
+                : null,
+            })
+          : type === "issue"
+            ? issue(item.id, item.qty, doc, remark, { lotId: item.lotId, date })
+            : transfer(item.id, item.qty, dest, doc, {
+                lotId: item.lotId,
+                date,
+                destLocationId: item.destLocationId,
+              }),
+      );
+      addDocument(documentData);
+      setPrintDocument(documentData);
+      setItems([]);
+      setProductId("");
+      setProductSearch("");
+      setConfirm(false);
+      setError("");
+    } catch (submitError) {
+      setError(submitError.message);
+      setConfirm(false);
+    }
+  };
+  const totalQty = items.reduce((sum, item) => sum + stockQty(item), 0),
+    totalKg = items.reduce(
+      (sum, item) => sum + (isPackConversion(item) ? item.qty : 0),
+      0,
+    ),
+    totalValue = items.reduce(
+      (sum, item) => sum + stockQty(item) * item.price,
+      0,
+    );
 
-  return <>
-    <PageHeader title={c.title} subtitle={c.sub}/>
-    {(!activePeriod||activePeriod.month!==date.slice(0,7))&&<div className="period-warning"><TriangleAlert/><span><b>{activePeriod?`วันที่รายการไม่อยู่ในรอบ ${activePeriod.month}`:'ยังไม่ได้เปิดรอบเดือนคลัง'}</b> กรุณาไปที่เมนู “รอบเดือนคลัง” ก่อนบันทึกรายการ</span></div>}
-    <div className="transaction-layout"><div>
-      <div className="card form-card"><div className="section-title"><span>01</span><div><h2>ข้อมูลเอกสาร</h2><p>ระบุข้อมูลหลักของรายการ</p></div></div><div className="form-grid">
-        <label>เลขที่เอกสาร<input value={doc} disabled/></label><label>{c.date}<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label>
-        <label>{type==='transfer'?'คลังต้นทาง':type==='receive'?'คลังที่รับเข้า':'คลังที่จ่ายออก'}<select value={group} onChange={event=>{setGroup(event.target.value);setItems([]);setProductId('');setProductSearch('')}}>{warehouseGroups.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-        {type==='transfer'?<label>คลังปลายทาง<select value={dest} onChange={event=>{setDest(event.target.value);setItems([])}}>{warehouseGroups.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>:<label>{type==='receive'?'Supplier':'สาขา / ผู้รับสินค้า'}<input value={supplier} onChange={event=>setSupplier(event.target.value)}/></label>}
-        <label>เลขที่อ้างอิง<input value={ref} onChange={event=>setRef(event.target.value)} placeholder="PO / ใบส่งของ"/></label><label>ผู้ทำรายการ<input value="ผู้ดูแลระบบ" disabled/></label><label className="full">หมายเหตุ<textarea value={remark} onChange={event=>setRemark(event.target.value)} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"/></label>
-      </div></div>
-      <div className="card item-card"><div className="section-title item-heading"><span>02</span><div><h2>รายการสินค้า</h2><p>ค้นหา เลือกสินค้า แล้วกดเพิ่มรายการ</p></div><div className="product-picker searchable-picker"><label className="product-search"><Search/><input value={productSearch} onFocus={()=>setShowResults(true)} onBlur={()=>setTimeout(()=>setShowResults(false),150)} onChange={event=>{setProductSearch(event.target.value);setProductId('');setShowResults(true)}} placeholder="พิมพ์ Barcode, รหัส หรือชื่อสินค้า" aria-label="ค้นหาสินค้า"/>{showResults&&productSearch&&<div className="search-results">{available.slice(0,12).map(product=><button type="button" key={product.id} onMouseDown={()=>{setProductId(product.id);setProductSearch(product.productName);setShowResults(false)}}><b>{product.productCode}</b><span>{product.productName}</span><small>คงเหลือ {fmt(product.currentStock)} {product.unit}</small></button>)}{!available.length&&<div className="no-result">ไม่พบสินค้า</div>}</div>}</label><select value={productId} onChange={event=>setProductId(event.target.value)} aria-label="เลือกสินค้า"><option value="">— เลือกสินค้า ({available.length}) —</option>{available.map(product=><option value={product.id} key={product.id}>{product.productCode} · {product.productName} (คงเหลือ {fmt(product.currentStock)} {product.unit})</option>)}</select><button className="btn secondary" onClick={add} disabled={!available.length}><Plus/> เพิ่มรายการสินค้า</button></div></div>
-        {error&&<div className="alert">{error}</div>}{type==='transfer'&&group===dest&&<div className="alert">คลังต้นทางและปลายทางต้องต่างกัน</div>}
-        {type==='receive'&&group==='FG-PACK'&&items.some(isPackConversion)&&<div className="pack-conversion-panel"><b>คำนวณกิโลกรัมเป็นแพ็ค</b>{items.filter(isPackConversion).map(item=><span key={item.id}>{item.productName}: <strong>{fmt(item.qty)} กก.</strong> ÷ {packWeight(item.productName)||'ไม่พบน้ำหนัก'} กก./แพ็ค = <strong>{packWeight(item.productName)?fmt(stockQty(item)):'—'} แพ็ค</strong></span>)}</div>}
-        {overItems.length>0&&<div className="over-stock-warning"><TriangleAlert/><div><b>รายการรับเกินลิมิต {overItems.length} รายการ</b><span>ระบบยังอนุญาตให้รับได้ แต่จะแสดง Popup ให้ยืนยันก่อนบันทึก</span></div></div>}
-        <div className="table-wrap"><table><thead><tr><th>#</th><th>สินค้า</th><th>Stock</th><th>จุดเก็บต้นทาง</th>{type==='transfer'&&<th>จุดเก็บปลายทาง</th>}<th>Lot (วันที่)</th><th>คงเหลือ Lot</th><th>หน่วย</th><th>จำนวน{type==='receive'?'รับ':type==='issue'?'จ่าย':'โอน'}</th>{type==='receive'&&<><th>ราคา/หน่วย</th><th>รวม</th></>}<th>คงเหลือหลังรายการ</th><th></th></tr></thead><tbody>{items.map((item,index)=>{const lot=lots.find(entry=>entry.id===item.lotId),location=storageLocations.find(entry=>entry.id===item.locationId),destLocation=storageLocations.find(entry=>entry.id===item.destLocationId),over=type==='receive'&&location&&locationUsage(location.id)+item.qty>location.capacity,destOver=type==='transfer'&&destLocation&&locationUsage(destLocation.id)+item.qty>destLocation.capacity;return <tr key={item.id}><td>{index+1}</td><td><b>{item.productName}</b><small>{item.barcode} · {item.productCode}</small></td><td>{fmt(item.currentStock)}</td><td><select className="table-input storage-select" value={item.locationId} onChange={event=>{const locationId=event.target.value,firstLot=productLots(item.id,locationId)[0];setItems(current=>current.map(row=>row.id===item.id?{...row,locationId,lotDate:normalizeLotDate(firstLot?.lotNo)||firstLot?.receivedDate||'',lotId:type==='receive'?'':firstLot?.id||''}:row))}}><option value="">เลือกจุดเก็บ</option>{productLocations(item).map(entry=><option value={entry.id} key={entry.id}>{entry.name} · {fmt(locationUsage(entry.id))}/{fmt(entry.capacity)} {entry.unit}</option>)}</select>{over&&<small className="over-stock-text">Over Stock · ว่าง {fmt(Math.max(0,location.capacity-locationUsage(location.id)))}</small>}</td>{type==='transfer'&&<td><select className="table-input storage-select" value={item.destLocationId} onChange={event=>update(item.id,'destLocationId',event.target.value)}><option value="">เลือกจุดเก็บปลายทาง</option>{storageLocations.filter(entry=>entry.warehouseGroup===dest&&entry.active).map(entry=><option value={entry.id} key={entry.id}>{entry.name} · {fmt(locationUsage(entry.id))}/{fmt(entry.capacity)} {entry.unit}</option>)}</select>{destOver&&<small className="over-stock-text">Over Stock ปลายทาง</small>}</td>}<td><input className="table-input" type="date" value={type==='receive'?item.lotNo:item.lotDate||''} onChange={event=>{const value=event.target.value;if(type==='receive'){update(item.id,'lotNo',value);return}const matched=productLots(item.id,item.locationId).find(entry=>(normalizeLotDate(entry.lotNo)||entry.receivedDate)===value);setItems(current=>current.map(row=>row.id===item.id?{...row,lotDate:value,lotId:matched?.id||''}:row))}}/>{type!=='receive'&&!lot&&item.lotDate&&<small className="error-text">ไม่พบ Lot ในวันที่เลือก</small>}<small>{type==='receive'?`รับ ${date}`:lot?`รับ ${lot.receivedDate} · เหลือ ${fmt(lot.quantityRemaining)}`:'เลือกวันที่ Lot'}</small></td><td><b>{type==='receive'?fmt(item.qty):fmt((lot?.quantityRemaining||0)-item.qty)}</b></td><td>{item.unit}</td><td><input className="table-input" type="number" min="1" value={item.qty} onChange={event=>update(item.id,'qty',event.target.value)}/>{type!=='receive'&&(!lot||item.qty>lot.quantityRemaining)&&<small className="error-text">ยอดใน Lot ไม่พอ</small>}</td>{type==='receive'&&<><td><input className="table-input" type="number" min="0" value={item.price} onChange={event=>update(item.id,'price',event.target.value)}/></td><td>{fmt(item.qty*item.price)}</td></>}<td><b>{fmt(item.currentStock+(type==='receive'?item.qty:-item.qty))}</b></td><td><button className="icon-btn danger" onClick={()=>setItems(current=>current.filter(row=>row.id!==item.id))} aria-label={`ลบ ${item.productName}`}><Trash2/></button></td></tr>})}</tbody></table>{!items.length&&<div className="empty compact-empty"><c.Icon/><b>ยังไม่มีรายการสินค้า</b><span>เลือกสินค้าด้านบนแล้วกด “เพิ่มรายการสินค้า”</span></div>}</div>
+  return (
+    <>
+      <PageHeader title={c.title} subtitle={c.sub} />
+      {(!activePeriod || activePeriod.month !== date.slice(0, 7)) && (
+        <div className="period-warning">
+          <TriangleAlert />
+          <span>
+            <b>
+              {activePeriod
+                ? `วันที่รายการไม่อยู่ในรอบ ${activePeriod.month}`
+                : "ยังไม่ได้เปิดรอบเดือนคลัง"}
+            </b>{" "}
+            กรุณาไปที่เมนู “รอบเดือนคลัง” ก่อนบันทึกรายการ
+          </span>
+        </div>
+      )}
+      <div className="transaction-layout">
+        <div>
+          <div className="card form-card">
+            <div className="section-title">
+              <span>01</span>
+              <div>
+                <h2>ข้อมูลเอกสาร</h2>
+                <p>ระบุข้อมูลหลักของรายการ</p>
+              </div>
+            </div>
+            <div className="form-grid">
+              <label>
+                เลขที่เอกสาร
+                <input value={doc} disabled />
+              </label>
+              <label>
+                {c.date}
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                />
+              </label>
+              <label>
+                {type === "transfer"
+                  ? "คลังต้นทาง"
+                  : type === "receive"
+                    ? "คลังที่รับเข้า"
+                    : "คลังที่จ่ายออก"}
+                <select
+                  value={group}
+                  onChange={(event) => {
+                    setGroup(event.target.value);
+                    setItems([]);
+                    setProductId("");
+                    setProductSearch("");
+                  }}
+                >
+                  {warehouseGroups.map((item) => (
+                    <option value={item.id} key={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {type === "transfer" ? (
+                <label>
+                  คลังปลายทาง
+                  <select
+                    value={dest}
+                    onChange={(event) => {
+                      setDest(event.target.value);
+                      setItems([]);
+                    }}
+                  >
+                    {warehouseGroups.map((item) => (
+                      <option value={item.id} key={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <label>
+                  {type === "receive" ? "Supplier" : "สาขา / ผู้รับสินค้า"}
+                  <input
+                    value={supplier}
+                    onChange={(event) => setSupplier(event.target.value)}
+                  />
+                </label>
+              )}
+              <label>
+                เลขที่อ้างอิง
+                <input
+                  value={ref}
+                  onChange={(event) => setRef(event.target.value)}
+                  placeholder="PO / ใบส่งของ"
+                />
+              </label>
+              <label>
+                ผู้ทำรายการ
+                <input value="ผู้ดูแลระบบ" disabled />
+              </label>
+              <label className="full">
+                หมายเหตุ
+                <textarea
+                  value={remark}
+                  onChange={(event) => setRemark(event.target.value)}
+                  placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"
+                />
+              </label>
+            </div>
+          </div>
+          <div className="card item-card">
+            <div className="section-title item-heading">
+              <span>02</span>
+              <div>
+                <h2>รายการสินค้า</h2>
+                <p>ค้นหา เลือกสินค้า แล้วกดเพิ่มรายการ</p>
+              </div>
+              <div className="product-picker searchable-picker">
+                <label className="product-search">
+                  <Search />
+                  <input
+                    value={productSearch}
+                    onFocus={() => setShowResults(true)}
+                    onBlur={() => setTimeout(() => setShowResults(false), 150)}
+                    onChange={(event) => {
+                      setProductSearch(event.target.value);
+                      setProductId("");
+                      setShowResults(true);
+                    }}
+                    placeholder="พิมพ์ Barcode, รหัส หรือชื่อสินค้า"
+                    aria-label="ค้นหาสินค้า"
+                  />
+                  {showResults && productSearch && (
+                    <div className="search-results">
+                      {available.slice(0, 12).map((product) => (
+                        <button
+                          type="button"
+                          key={product.id}
+                          onMouseDown={() => {
+                            setProductId(product.id);
+                            setProductSearch(product.productName);
+                            setShowResults(false);
+                          }}
+                        >
+                          <b>{product.productCode}</b>
+                          <span>{product.productName}</span>
+                          <small>
+                            คงเหลือ {fmt(product.currentStock)} {product.unit}
+                          </small>
+                        </button>
+                      ))}
+                      {!available.length && (
+                        <div className="no-result">ไม่พบสินค้า</div>
+                      )}
+                    </div>
+                  )}
+                </label>
+                <select
+                  value={productId}
+                  onChange={(event) => setProductId(event.target.value)}
+                  aria-label="เลือกสินค้า"
+                >
+                  <option value="">— เลือกสินค้า ({available.length}) —</option>
+                  {available.map((product) => (
+                    <option value={product.id} key={product.id}>
+                      {product.productCode} · {product.productName} (คงเหลือ{" "}
+                      {fmt(product.currentStock)} {product.unit})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="btn secondary"
+                  onClick={add}
+                  disabled={!available.length}
+                >
+                  <Plus /> เพิ่มรายการสินค้า
+                </button>
+              </div>
+            </div>
+            {error && <div className="alert">{error}</div>}
+            {type === "transfer" && group === dest && (
+              <div className="alert">คลังต้นทางและปลายทางต้องต่างกัน</div>
+            )}
+            {type === "receive" &&
+              group === "FG-PACK" &&
+              items.some(isPackConversion) && (
+                <div className="pack-conversion-panel">
+                  <b>คำนวณกิโลกรัมเป็นแพ็ค</b>
+                  {items.filter(isPackConversion).map((item) => (
+                    <span key={item.id}>
+                      {item.productName}: <strong>{fmt(item.qty)} กก.</strong> ÷{" "}
+                      {packWeight(item.productName) || "ไม่พบน้ำหนัก"} กก./แพ็ค
+                      ={" "}
+                      <strong>
+                        {packWeight(item.productName)
+                          ? fmt(stockQty(item))
+                          : "—"}{" "}
+                        แพ็ค
+                      </strong>
+                    </span>
+                  ))}
+                </div>
+              )}
+            {overItems.length > 0 && (
+              <div className="over-stock-warning">
+                <TriangleAlert />
+                <div>
+                  <b>รายการรับเกินลิมิต {overItems.length} รายการ</b>
+                  <span>
+                    ระบบยังอนุญาตให้รับได้ แต่จะแสดง Popup ให้ยืนยันก่อนบันทึก
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>สินค้า</th>
+                    <th>Stock</th>
+                    <th>จุดเก็บต้นทาง</th>
+                    {type === "transfer" && <th>จุดเก็บปลายทาง</th>}
+                    <th>Lot (วันที่)</th>
+                    <th>คงเหลือ Lot</th>
+                    <th>หน่วย</th>
+                    <th>
+                      จำนวน
+                      {type === "receive"
+                        ? "รับ"
+                        : type === "issue"
+                          ? "จ่าย"
+                          : "โอน"}
+                    </th>
+                    {type === "receive" && (
+                      <>
+                        <th>ราคา/หน่วย</th>
+                        <th>รวม</th>
+                      </>
+                    )}
+                    <th>คงเหลือหลังรายการ</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => {
+                    const lot = lots.find((entry) => entry.id === item.lotId),
+                      location = storageLocations.find(
+                        (entry) => entry.id === item.locationId,
+                      ),
+                      destLocation = storageLocations.find(
+                        (entry) => entry.id === item.destLocationId,
+                      ),
+                      over =
+                        type === "receive" &&
+                        location &&
+                        locationUsage(location.id) +
+                            quantityForLocation(item, location) >
+                          location.capacity,
+                      destOver =
+                        type === "transfer" &&
+                        destLocation &&
+                        locationUsage(destLocation.id) +
+                            quantityForLocation(item, destLocation) >
+                          destLocation.capacity;
+                    return (
+                      <tr key={item.id}>
+                        <td>{index + 1}</td>
+                        <td>
+                          <b>{item.productName}</b>
+                          <small>
+                            {item.barcode} · {item.productCode}
+                          </small>
+                        </td>
+                        <td>{fmt(item.currentStock)}</td>
+                        <td>
+                          <select
+                            className="table-input storage-select"
+                            value={item.locationId}
+                            onChange={(event) => {
+                              const locationId = event.target.value,
+                                firstLot = productLots(item.id, locationId)[0];
+                              setItems((current) =>
+                                current.map((row) =>
+                                  row.id === item.id
+                                    ? {
+                                        ...row,
+                                        locationId,
+                                        lotDate:
+                                          normalizeLotDate(firstLot?.lotNo) ||
+                                          firstLot?.receivedDate ||
+                                          "",
+                                        lotId:
+                                          type === "receive"
+                                            ? ""
+                                            : firstLot?.id || "",
+                                      }
+                                    : row,
+                                ),
+                              );
+                            }}
+                          >
+                            <option value="">เลือกจุดเก็บ</option>
+                            {productLocations(item).map((entry) => (
+                              <option value={entry.id} key={entry.id}>
+                                {entry.name} · {fmt(locationUsage(entry.id))}/
+                                {fmt(entry.capacity)} {entry.unit}
+                              </option>
+                            ))}
+                          </select>
+                          {over && (
+                            <small className="over-stock-text">
+                              Over Stock · ว่าง{" "}
+                              {fmt(
+                                Math.max(
+                                  0,
+                                  location.capacity -
+                                    locationUsage(location.id),
+                                ),
+                              )}
+                            </small>
+                          )}
+                        </td>
+                        {type === "transfer" && (
+                          <td>
+                            <select
+                              className="table-input storage-select"
+                              value={item.destLocationId}
+                              onChange={(event) =>
+                                update(
+                                  item.id,
+                                  "destLocationId",
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              <option value="">เลือกจุดเก็บปลายทาง</option>
+                              {storageLocations
+                                .filter(
+                                  (entry) =>
+                                    entry.warehouseGroup === dest &&
+                                    entry.active &&
+                                    unitsCompatible(item.unit, entry.unit),
+                                )
+                                .map((entry) => (
+                                  <option value={entry.id} key={entry.id}>
+                                    {entry.name} ·{" "}
+                                    {fmt(locationUsage(entry.id))}/
+                                    {fmt(entry.capacity)} {entry.unit}
+                                  </option>
+                                ))}
+                            </select>
+                            {destOver && (
+                              <small className="over-stock-text">
+                                Over Stock ปลายทาง
+                              </small>
+                            )}
+                          </td>
+                        )}
+                        <td>
+                          <input
+                            className="table-input"
+                            type="date"
+                            value={
+                              type === "receive"
+                                ? item.lotNo
+                                : item.lotDate || ""
+                            }
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              if (type === "receive") {
+                                update(item.id, "lotNo", value);
+                                return;
+                              }
+                              const matched = productLots(
+                                item.id,
+                                item.locationId,
+                              ).find(
+                                (entry) =>
+                                  (normalizeLotDate(entry.lotNo) ||
+                                    entry.receivedDate) === value,
+                              );
+                              setItems((current) =>
+                                current.map((row) =>
+                                  row.id === item.id
+                                    ? {
+                                        ...row,
+                                        lotDate: value,
+                                        lotId: matched?.id || "",
+                                      }
+                                    : row,
+                                ),
+                              );
+                            }}
+                          />
+                          {type !== "receive" && !lot && item.lotDate && (
+                            <small className="error-text">
+                              ไม่พบ Lot ในวันที่เลือก
+                            </small>
+                          )}
+                          <small>
+                            {type === "receive"
+                              ? `รับ ${date}`
+                              : lot
+                                ? `รับ ${lot.receivedDate} · เหลือ ${fmt(lot.quantityRemaining)}`
+                                : "เลือกวันที่ Lot"}
+                          </small>
+                        </td>
+                        <td>
+                          <b>
+                            {type === "receive"
+                              ? fmt(item.qty)
+                              : fmt((lot?.quantityRemaining || 0) - item.qty)}
+                          </b>
+                        </td>
+                        <td>{item.unit}</td>
+                        <td>
+                          <input
+                            className="table-input"
+                            type="number"
+                            min="1"
+                            value={item.qty}
+                            onChange={(event) =>
+                              update(item.id, "qty", event.target.value)
+                            }
+                          />
+                          {type !== "receive" &&
+                            (!lot || item.qty > lot.quantityRemaining) && (
+                              <small className="error-text">
+                                ยอดใน Lot ไม่พอ
+                              </small>
+                            )}
+                        </td>
+                        {type === "receive" && (
+                          <>
+                            <td>
+                              <input
+                                className="table-input"
+                                type="number"
+                                min="0"
+                                value={item.price}
+                                onChange={(event) =>
+                                  update(item.id, "price", event.target.value)
+                                }
+                              />
+                            </td>
+                            <td>{fmt(item.qty * item.price)}</td>
+                          </>
+                        )}
+                        <td>
+                          <b>
+                            {fmt(
+                              item.currentStock +
+                                (type === "receive" ? item.qty : -item.qty),
+                            )}
+                          </b>
+                        </td>
+                        <td>
+                          <button
+                            className="icon-btn danger"
+                            onClick={() =>
+                              setItems((current) =>
+                                current.filter((row) => row.id !== item.id),
+                              )
+                            }
+                            aria-label={`ลบ ${item.productName}`}
+                          >
+                            <Trash2 />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {!items.length && (
+                <div className="empty compact-empty">
+                  <c.Icon />
+                  <b>ยังไม่มีรายการสินค้า</b>
+                  <span>เลือกสินค้าด้านบนแล้วกด “เพิ่มรายการสินค้า”</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <aside className="summary-card card">
+          <div className={`summary-icon ${type}`}>
+            <c.Icon />
+          </div>
+          <h2>สรุปรายการ</h2>
+          <div>
+            <span>จำนวนรายการ</span>
+            <b>{items.length} รายการ</b>
+          </div>
+          {totalKg > 0 && (
+            <div>
+              <span>น้ำหนักรับเข้า</span>
+              <b>{fmt(totalKg)} กก.</b>
+            </div>
+          )}
+          <div>
+            <span>จำนวนเข้า Stock</span>
+            <b>
+              {fmt(totalQty)}{" "}
+              {group === "FG-PACK" && type === "receive" ? "แพ็ค" : "หน่วย"}
+            </b>
+          </div>
+          {type === "receive" && (
+            <div>
+              <span>มูลค่ารวม</span>
+              <b>฿{fmt(totalValue)}</b>
+            </div>
+          )}
+          <hr />
+          <button className="btn ghost">
+            <Save /> บันทึกแบบร่าง
+          </button>
+          <button
+            className="btn primary"
+            disabled={invalid}
+            onClick={() => setConfirm(true)}
+          >
+            <CheckCircle2 /> {c.action}
+          </button>
+          <button
+            className="btn text"
+            onClick={() => {
+              setItems([]);
+              setProductId("");
+              setProductSearch("");
+              setToast("ยกเลิกรายการแล้ว");
+            }}
+          >
+            ยกเลิก
+          </button>
+        </aside>
       </div>
-    </div><aside className="summary-card card"><div className={`summary-icon ${type}`}><c.Icon/></div><h2>สรุปรายการ</h2><div><span>จำนวนรายการ</span><b>{items.length} รายการ</b></div>{totalKg>0&&<div><span>น้ำหนักรับเข้า</span><b>{fmt(totalKg)} กก.</b></div>}<div><span>จำนวนเข้า Stock</span><b>{fmt(totalQty)} {group==='FG-PACK'&&type==='receive'?'แพ็ค':'หน่วย'}</b></div>{type==='receive'&&<div><span>มูลค่ารวม</span><b>฿{fmt(totalValue)}</b></div>}<hr/><button className="btn ghost"><Save/> บันทึกแบบร่าง</button><button className="btn primary" disabled={invalid} onClick={()=>setConfirm(true)}><CheckCircle2/> {c.action}</button><button className="btn text" onClick={()=>{setItems([]);setProductId('');setProductSearch('');setToast('ยกเลิกรายการแล้ว')}}>ยกเลิก</button></aside></div>
-    {confirm&&<ConfirmModal title={overItems.length?'ยืนยันรับสินค้า Over Stock':c.action} text={overItems.length?`คำเตือน: มี ${overItems.length} รายการเกินลิมิตจุดเก็บ ระบบอนุญาตให้รับได้ ต้องการยืนยันบันทึกเอกสาร ${doc} หรือไม่`:`ตรวจสอบข้อมูลแล้ว ต้องการบันทึกเอกสาร ${doc} หรือไม่`} onClose={()=>setConfirm(false)} onConfirm={submit}/>}
-    {printDocument&&<PrintDocument data={printDocument} onClose={()=>setPrintDocument(null)}/>}
-  </>;
+      {confirm && (
+        <ConfirmModal
+          title={overItems.length ? "ยืนยันรับสินค้า Over Stock" : c.action}
+          text={
+            overItems.length
+              ? `คำเตือน: มี ${overItems.length} รายการเกินลิมิตจุดเก็บ ระบบอนุญาตให้รับได้ ต้องการยืนยันบันทึกเอกสาร ${doc} หรือไม่`
+              : `ตรวจสอบข้อมูลแล้ว ต้องการบันทึกเอกสาร ${doc} หรือไม่`
+          }
+          onClose={() => setConfirm(false)}
+          onConfirm={submit}
+        />
+      )}
+      {printDocument && (
+        <PrintDocument
+          data={printDocument}
+          onClose={() => setPrintDocument(null)}
+        />
+      )}
+    </>
+  );
 }
 
-function PrintDocument({data,onClose}){
-  const total=data.items.reduce((sum,item)=>sum+item.qty,0),value=data.items.reduce((sum,item)=>sum+item.qty*(item.price||0),0);
-  const print=()=>{try{printHtml(document.querySelector('.print-document').outerHTML,data.title)}catch(error){alert(error.message)}};
-  return <Modal title="ตัวอย่างเอกสารสำหรับพิมพ์" onClose={onClose} wide>
-    <div className="print-document">
-      <div className="print-company"><div><h1>CSP Foods Supply Co., Ltd.</h1><p>บริษัท ซีเอสพี ฟู้ดส์ ซัพพลาย จำกัด</p></div><div><h2>{data.title}</h2><b>เลขที่ {data.documentNo}</b></div></div>
-      <div className="print-meta"><div><span>วันที่เอกสาร</span><b>{data.date}</b></div><div><span>คลังต้นทาง</span><b>{data.group}</b></div>{data.type==='transfer'&&<div><span>คลังปลายทาง</span><b>{data.destination}</b></div>}<div><span>{data.type==='receive'?'Supplier':'ผู้รับ / หน่วยงาน'}</span><b>{data.partner||'—'}</b></div><div><span>เลขที่อ้างอิง</span><b>{data.reference||'—'}</b></div><div><span>ผู้ทำรายการ</span><b>{data.userName}</b></div></div>
-      <table className="print-table"><thead><tr><th>ลำดับ</th><th>รหัสสินค้า</th><th>รายละเอียดสินค้า</th><th>จุดเก็บต้นทาง / ปลายทาง</th><th>Lot</th><th>วันที่รับ</th><th>หน่วย</th><th>จำนวน</th></tr></thead><tbody>{data.items.map((item,index)=><tr key={item.id}><td>{index+1}</td><td>{item.productCode}<small>{item.barcode}</small></td><td>{item.productName}</td><td>{item.locationName||'—'}{data.type==='transfer'&&<small>ไป {item.destinationLocationName||'—'}</small>}</td><td>{item.lotNo}</td><td>{item.receivedDate}</td><td>{item.unit}</td><td className="num">{fmt(item.qty)}</td></tr>)}</tbody><tfoot><tr><td colSpan={7}>รวมทั้งสิ้น</td><td className="num">{fmt(total)}</td></tr></tfoot></table>
-      {data.type==='receive'&&<div className="print-remark"><b>มูลค่ารวม:</b> ฿{fmt(value)}</div>}<div className="print-remark"><b>หมายเหตุ:</b> {data.remark||'—'}</div><div className="signature-grid">{data.signatures.map(label=><div key={label}><div className="signature-line"/><b>{label}</b><span>(........................................................)</span><span>วันที่ ........../........../..........</span></div>)}</div>
-    </div>
-    <div className="modal-actions no-print"><button className="btn ghost" onClick={onClose}>ปิด</button><button className="btn primary" onClick={print}><Printer/> พิมพ์เอกสาร</button></div>
-  </Modal>;
+function PrintDocument({ data, onClose }) {
+  const total = data.items.reduce((sum, item) => sum + item.qty, 0),
+    value = data.items.reduce(
+      (sum, item) => sum + item.qty * (item.price || 0),
+      0,
+    );
+  const print = () => {
+    try {
+      printHtml(
+        document.querySelector(".print-document").outerHTML,
+        data.title,
+      );
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+  return (
+    <Modal title="ตัวอย่างเอกสารสำหรับพิมพ์" onClose={onClose} wide>
+      <div className="print-document">
+        <div className="print-company">
+          <div>
+            <h1>CSP Foods Supply Co., Ltd.</h1>
+            <p>บริษัท ซีเอสพี ฟู้ดส์ ซัพพลาย จำกัด</p>
+          </div>
+          <div>
+            <h2>{data.title}</h2>
+            <b>เลขที่ {data.documentNo}</b>
+          </div>
+        </div>
+        <div className="print-meta">
+          <div>
+            <span>วันที่เอกสาร</span>
+            <b>{data.date}</b>
+          </div>
+          <div>
+            <span>คลังต้นทาง</span>
+            <b>{data.group}</b>
+          </div>
+          {data.type === "transfer" && (
+            <div>
+              <span>คลังปลายทาง</span>
+              <b>{data.destination}</b>
+            </div>
+          )}
+          <div>
+            <span>
+              {data.type === "receive" ? "Supplier" : "ผู้รับ / หน่วยงาน"}
+            </span>
+            <b>{data.partner || "—"}</b>
+          </div>
+          <div>
+            <span>เลขที่อ้างอิง</span>
+            <b>{data.reference || "—"}</b>
+          </div>
+          <div>
+            <span>ผู้ทำรายการ</span>
+            <b>{data.userName}</b>
+          </div>
+        </div>
+        <table className="print-table">
+          <thead>
+            <tr>
+              <th>ลำดับ</th>
+              <th>รหัสสินค้า</th>
+              <th>รายละเอียดสินค้า</th>
+              <th>จุดเก็บต้นทาง / ปลายทาง</th>
+              <th>Lot</th>
+              <th>วันที่รับ</th>
+              <th>หน่วย</th>
+              <th>จำนวน</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.items.map((item, index) => (
+              <tr key={item.id}>
+                <td>{index + 1}</td>
+                <td>
+                  {item.productCode}
+                  <small>{item.barcode}</small>
+                </td>
+                <td>{item.productName}</td>
+                <td>
+                  {item.locationName || "—"}
+                  {data.type === "transfer" && (
+                    <small>ไป {item.destinationLocationName || "—"}</small>
+                  )}
+                </td>
+                <td>{item.lotNo}</td>
+                <td>{item.receivedDate}</td>
+                <td>{item.unit}</td>
+                <td className="num">{fmt(item.qty)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={7}>รวมทั้งสิ้น</td>
+              <td className="num">{fmt(total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+        {data.type === "receive" && (
+          <div className="print-remark">
+            <b>มูลค่ารวม:</b> ฿{fmt(value)}
+          </div>
+        )}
+        <div className="print-remark">
+          <b>หมายเหตุ:</b> {data.remark || "—"}
+        </div>
+        <div className="signature-grid">
+          {data.signatures.map((label) => (
+            <div key={label}>
+              <div className="signature-line" />
+              <b>{label}</b>
+              <span>
+                (........................................................)
+              </span>
+              <span>วันที่ ........../........../..........</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="modal-actions no-print">
+        <button className="btn ghost" onClick={onClose}>
+          ปิด
+        </button>
+        <button className="btn primary" onClick={print}>
+          <Printer /> พิมพ์เอกสาร
+        </button>
+      </div>
+    </Modal>
+  );
 }

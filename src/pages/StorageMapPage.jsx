@@ -4,7 +4,7 @@ import {ArrowLeft,Boxes,GripVertical,MapPinned,PackageCheck,PackageMinus,Plus,Sa
 import {Bar,BarChart,CartesianGrid,Cell,Pie,PieChart,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {useApp} from '../context/AppContext';
 import {movementLabels,warehouseGroups,units} from '../data/constants';
-import {fmt} from '../utils/helpers';
+import {convertQuantity,fmt} from '../utils/helpers';
 import {PageHeader,Modal} from '../components/common';
 import './warehouseEnhancements.css';
 
@@ -13,7 +13,7 @@ export default function StorageMapPage(){
   const {group}=useParams(),navigate=useNavigate(),{products,movements,storageLocations,lots,assignProductLocation,unassignProductLocation,saveStorageLocation,reorderStorageLocations,removeStorageLocation}=useApp();
   const showAll=group==='all',warehouse=showAll?null:(warehouseGroups.find(item=>item.path===group)||warehouseGroups.find(item=>item.id===group)||warehouseGroups[0]);
   const locations=showAll?storageLocations:storageLocations.filter(item=>item.warehouseGroup===warehouse.id);
-  const usage=useMemo(()=>Object.fromEntries(locations.map(location=>[location.id,lots.filter(lot=>lot.locationId===location.id&&lot.quantityRemaining>0).reduce((sum,lot)=>sum+(+lot.quantityRemaining||0),0)])),[locations,lots]);
+  const usage=useMemo(()=>Object.fromEntries(locations.map(location=>[location.id,lots.filter(lot=>lot.locationId===location.id&&lot.quantityRemaining>0).reduce((sum,lot)=>{const product=products.find(item=>item.id===lot.productId);return sum+convertQuantity(lot.quantityRemaining,product?.unit,location.unit)},0)])),[locations,lots,products]);
   const [editing,setEditing]=useState(null),[error,setError]=useState(''),[dragging,setDragging]=useState(''),[draggingProduct,setDraggingProduct]=useState(''),[dragOver,setDragOver]=useState(''),[settingsMode,setSettingsMode]=useState(false),[removalMode,setRemovalMode]=useState(false),[managingLocation,setManagingLocation]=useState(null),[managingSelected,setManagingSelected]=useState([]),[selectedProducts,setSelectedProducts]=useState(()=>{try{return JSON.parse(sessionStorage.getItem('csp_map_product_selection'))||[]}catch{return[]}});
   const open=location=>{setEditing(location?{...location}:emptyLocation(warehouse?.id));setError('')};
   const submit=()=>{if(!editing.warehouseGroup||!editing.name.trim()||+editing.capacity<=0){setError('กรุณาเลือกคลัง ระบุชื่อจุดเก็บ และลิมิตมากกว่า 0');return}if((usage[editing.id]||0)>+editing.capacity){setError(`ลิมิตต้องไม่น้อยกว่ายอดที่เก็บอยู่ ${fmt(usage[editing.id])} ${editing.unit}`);return}saveStorageLocation(editing);setEditing(null)};

@@ -1,6 +1,7 @@
 import {createContext,useContext,useEffect,useState} from 'react';
 import {initialProducts,initialMovements} from '../data/mockData';
 import {pkInCatalogProducts,pkInCatalogVersion} from '../data/pkInCatalog';
+import {unitsCompatible} from '../utils/helpers';
 const AppContext=createContext(null); const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}};
 const uniqueId=prefix=>`${prefix}-${globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 const clientIp=()=>sessionStorage.getItem('csp_client_ip')||location.hostname||'127.0.0.1';
@@ -26,6 +27,7 @@ const updateProduct=(id,data)=>{setProducts(v=>v.map(p=>p.id===id?{...p,...data,
 const assignProductLocation=(productId,locationId)=>{
   const location=storageLocations.find(item=>item.id===locationId),product=products.find(item=>item.id===productId);
   if(!product||!location)throw new Error('ไม่พบสินค้าหรือจุดจัดเก็บที่เลือก');
+  if(!unitsCompatible(product.unit,location.unit))throw new Error(`หน่วยสินค้า ${product.unit||'ไม่ระบุ'} ไม่ตรงกับหน่วยจุดเก็บ ${location.unit||'ไม่ระบุ'}`);
   const now=new Date().toISOString(),oldLocation=product.defaultLocationName||'ยังไม่ระบุจุดจัดเก็บ';
   setProducts(current=>current.map(item=>item.id===productId?{...item,warehouseGroup:location.warehouseGroup,defaultLocationId:location.id,defaultLocationName:location.name,updatedAt:now}:item));
   setLots(current=>{const positive=current.filter(lot=>lot.productId===productId&&Number(lot.quantityRemaining)>0),lotStock=positive.reduce((sum,lot)=>sum+Number(lot.quantityRemaining||0),0),productStock=Math.max(0,Number(product.currentStock)||0),moved=current.map(lot=>lot.productId===productId?{...lot,warehouseGroup:location.warehouseGroup,locationId:location.id,locationName:location.name,updatedAt:now}:lot),missing=Math.max(0,productStock-lotStock);return missing>0?[{id:uniqueId('LOT'),productId:product.id,productCode:product.productCode,productName:product.productName,barcode:product.barcode||'',warehouseGroup:location.warehouseGroup,locationId:location.id,locationName:location.name,lotNo:'ซิงก์จากแผนที่จุดเก็บ',receivedDate:now.slice(0,10),quantityReceived:missing,quantityRemaining:missing,sourceMenu:'แผนที่จุดเก็บ',createdAt:now},...moved]:moved});
