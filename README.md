@@ -1,5 +1,25 @@
 # CSP Warehouse Management System
 
+## เปิดใช้งานบน GitHub Codespaces
+
+1. ส่งโค้ดขึ้น GitHub แล้วเปิดหน้า repository
+2. กด **Code > Codespaces > Create codespace on main**
+3. Codespaces จะติดตั้ง dependencies และเปิดระบบที่พอร์ต `5173` ให้อัตโนมัติ
+
+หากหน้า Preview ไม่เปิดเอง ให้เปิดแท็บ **Ports** แล้วกดลิงก์ของพอร์ต `5173`
+หรือรันคำสั่งต่อไปนี้ใน Terminal:
+
+```bash
+pnpm run dev -- --host 0.0.0.0 --port 5173
+```
+
+ตรวจสอบโค้ดก่อนส่งขึ้นระบบได้ด้วย:
+
+```bash
+pnpm run lint
+pnpm run build
+```
+
 ระบบจัดการคลังสินค้าสำหรับ **CSP Foods Supply Co., Ltd.** ครอบคลุม Dashboard, Stock คงเหลือ, รับสินค้า, จ่ายสินค้า, โอนระหว่างคลัง, Stock Card, ข้อมูลสินค้า, รายงาน และตั้งค่า
 
 ## เทคโนโลยี
