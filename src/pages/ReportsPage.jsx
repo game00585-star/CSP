@@ -4,6 +4,7 @@ import {useApp} from '../context/AppContext';
 import {warehouseGroups,movementLabels} from '../data/constants';
 import {stockStatus,fmt,printHtml} from '../utils/helpers';
 import {PageHeader,ExportButton,StatusBadge,Empty,Modal} from '../components/common';
+import ReportNavigation from '../components/ReportNavigation';
 
 const reports=['Stock คงเหลือ','รายการรับสินค้า','รายการจ่ายสินค้า','รายการโอนคลัง'];
 const emptyFilters={from:'',to:'',group:'',lotDate:'',search:''};
@@ -47,7 +48,7 @@ export default function ReportsPage(){
 
   return <>
     <PageHeader title="รายงาน" subtitle="วิเคราะห์ข้อมูลคลังสินค้า Lot วันที่รับ-จ่าย และส่งออก Excel/PDF" actions={<><button className="btn secondary" onClick={exportPdf}><FileText/> Export PDF</button><ExportButton rows={exportRows} name={`CSP-report-${tab+1}`}/></>}/>
-    <div className="report-tabs">{reports.map((report,index)=><button key={report} className={tab===index?'active':''} onClick={()=>setTab(index)}>{report}</button>)}</div>
+    <ReportNavigation>{reports.map((report,index)=><button key={report} className={tab===index?'active':''} onClick={()=>setTab(index)}>{report}</button>)}</ReportNavigation>
     <div className="card filters">
       <label>วันที่เริ่มต้น<input type="date" value={draft.from} onChange={event=>change('from',event.target.value)}/></label>
       <label>วันที่สิ้นสุด<input type="date" value={draft.to} onChange={event=>change('to',event.target.value)}/></label>

@@ -19,6 +19,7 @@ import {
   Empty,
   ConfirmModal,
 } from "../components/common";
+import ReportNavigation from "../components/ReportNavigation";
 
 const normalizeLotDate = (value) => {
   const text = String(value || "").trim();
@@ -227,6 +228,7 @@ export default function StockCardPage({ lotsOnly = false }) {
           />
         }
       />
+      <ReportNavigation />
       <div className="card filters">
         <label>
           ค้นหาสินค้า / จุดเก็บ
