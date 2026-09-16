@@ -113,8 +113,8 @@ export default function StockCardPage() {
             (type === "TRANSFER"
               ? movement.transactionType.startsWith("TRANSFER_")
               : movement.transactionType === type)) &&
-          (!from || movement.transactionDate >= from) &&
-          (!to || movement.transactionDate <= to)
+          (!from || (normalizeLotDate(movement.transactionDate) || String(movement.transactionDate || "").slice(0, 10)) >= from) &&
+          (!to || (normalizeLotDate(movement.transactionDate) || String(movement.transactionDate || "").slice(0, 10)) <= to)
         );
       }),
     [
@@ -135,6 +135,7 @@ export default function StockCardPage() {
       lots
         .filter((lot) => {
           const lotProduct = products.find((item) => item.id === lot.productId),
+            receivedDate = normalizeLotDate(lot.receivedDate) || String(lot.receivedDate || "").slice(0, 10),
             matchesStatus =
               !status ||
               (status === "low" &&
@@ -152,11 +153,13 @@ export default function StockCardPage() {
                 .toLowerCase()
                 .includes(productSearch.toLowerCase())) &&
             (!lotSearch || normalizeLotDate(lot.lotNo) === lotSearch) &&
-            (!group || lot.warehouseGroup === group)
+            (!group || lot.warehouseGroup === group) &&
+            (!from || receivedDate >= from) &&
+            (!to || receivedDate <= to)
           );
         })
         .sort((a, b) => a.receivedDate.localeCompare(b.receivedDate)),
-    [lots, products, product, productSearch, lotSearch, group, status],
+    [lots, products, product, productSearch, lotSearch, group, status, from, to],
   );
   const totals = {
     in: list.reduce((sum, movement) => sum + Number(movement.quantityIn || 0), 0),
@@ -213,7 +216,7 @@ export default function StockCardPage() {
     <>
       <PageHeader
         title="Stock Card"
-        subtitle="ตรวจสอบวันที่รับ วันที่จ่าย และยอดคงเหลือแยกตาม Lot"
+        subtitle="ตรวจสอบวันที่ทำรายการ ประเภทรายการ และยอดคงเหลือแยกตาม Lot"
         actions={
           <ExportButton
             rows={list.map((movement) => ({
@@ -302,7 +305,7 @@ export default function StockCardPage() {
           </select>
         </label>
         <label>
-          วันที่เริ่มต้น
+          วันที่ทำรายการ ตั้งแต่
           <input
             type="date"
             value={from}
@@ -310,7 +313,7 @@ export default function StockCardPage() {
           />
         </label>
         <label>
-          วันที่สิ้นสุด
+          วันที่ทำรายการ ถึง
           <input
             type="date"
             value={to}
@@ -353,6 +356,7 @@ export default function StockCardPage() {
               : products.reduce((sum, item) => sum + item.currentStock, 0),
           )}
           unit={selected?.unit || "หลายหน่วย"}
+          onClick={() => setType("")}
         />
         <StatCard
           icon={ArrowDownToLine}
@@ -360,6 +364,7 @@ export default function StockCardPage() {
           value={fmt(totals.in)}
           unit={selected?.unit || "หลายหน่วย"}
           color="green"
+          onClick={() => setType("RECEIVE")}
         />
         <StatCard
           icon={ArrowUpFromLine}
@@ -367,6 +372,7 @@ export default function StockCardPage() {
           value={fmt(totals.out)}
           unit={selected?.unit || "หลายหน่วย"}
           color="orange"
+          onClick={() => setType("ISSUE")}
         />
         <StatCard
           icon={ArrowRightLeft}
@@ -374,7 +380,21 @@ export default function StockCardPage() {
           value={`${fmt(totals.tin)} / ${fmt(totals.tout)}`}
           unit={selected?.unit || "หลายหน่วย"}
           color="purple"
+          onClick={() => setType("TRANSFER")}
         />
+      </div>
+      <div className="card stock-movement-card">
+        <div className="card-title">
+          <div><h2>รายการเคลื่อนไหว</h2><p>แยกตามวันที่และประเภท รับเข้า จ่ายออก โอนเข้า และโอนออก</p></div>
+          <span className="movement-result-count">{list.length} รายการ</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>วันที่ทำรายการ</th><th>ประเภท</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>IN</th><th>OUT</th><th>คงเหลือหลังทำรายการ</th><th>ผู้ทำรายการ</th></tr></thead>
+            <tbody>{list.map(movement=><tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td>{movement.documentNo||'—'}</td><td>{movement.productCode||'—'}</td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movement.locationName||'ไม่ระบุจุดเก็บ'}</small></td><td>{movement.lotNo||'—'}</td><td className="qty-in">{movement.quantityIn?fmt(movement.quantityIn):'—'}</td><td className="qty-out">{movement.quantityOut?fmt(movement.quantityOut):'—'}</td><td className="num">{movement.balanceAfter==null?'—':fmt(movement.balanceAfter)}</td><td>{movement.userName||movement.createdBy||'—'}</td></tr>)}</tbody>
+          </table>
+          {!list.length&&<Empty/>}
+        </div>
       </div>
       <div className="card">
         <div className="card-title">
@@ -408,7 +428,7 @@ export default function StockCardPage() {
                 <th>จุดเก็บ</th>
                 <th>คลัง</th>
                 <th>Lot</th>
-                <th>วันที่รับ</th>
+                <th>วันที่รับ Lot</th>
                 <th>หน่วย</th>
                 <th>รับทั้งหมด</th>
                 <th>คงเหลือ Lot</th>
