@@ -29,7 +29,7 @@ const normalizeLotDate = (value) => {
     : "";
 };
 
-export default function StockCardPage() {
+export default function StockCardPage({ lotsOnly = false }) {
   const { products, movements, lots, removeStockCardLots } = useApp(),
     [params] = useSearchParams();
   const mapLocation = params.get("location") || "",
@@ -215,15 +215,15 @@ export default function StockCardPage() {
   return (
     <>
       <PageHeader
-        title="Stock Card"
-        subtitle="ตรวจสอบวันที่ทำรายการ ประเภทรายการ และยอดคงเหลือแยกตาม Lot"
+        title={lotsOnly ? "Lot คงเหลือ" : "Stock Card"}
+        subtitle={lotsOnly ? "ตรวจสอบสินค้าคงเหลือแยกตาม Lot วันที่รับ คลัง และจุดเก็บ" : "ตรวจสอบวันที่ทำรายการ ประเภทรายการ และยอดคงเหลือ"}
         actions={
           <ExportButton
-            rows={list.map((movement) => ({
+            rows={lotsOnly ? lotList : list.map((movement) => ({
               ...movement,
               transactionType: movementLabels[movement.transactionType],
             }))}
-            name="CSP-stock-card"
+            name={lotsOnly ? "CSP-lot-balance" : "CSP-stock-card"}
           />
         }
       />
@@ -278,7 +278,7 @@ export default function StockCardPage() {
             ))}
           </select>
         </label>
-        <label>
+        {!lotsOnly && <label>
           ประเภท
           <select
             value={type}
@@ -292,7 +292,7 @@ export default function StockCardPage() {
               </option>
             ))}
           </select>
-        </label>
+        </label>}
         <label>
           สถานะสินค้า
           <select
@@ -344,7 +344,7 @@ export default function StockCardPage() {
           </div>
         </div>
       )}
-      <div className="stats-grid compact">
+      {!lotsOnly && <><div className="stats-grid compact">
         <StatCard
           icon={PackageCheck}
           label={
@@ -395,8 +395,8 @@ export default function StockCardPage() {
           </table>
           {!list.length&&<Empty/>}
         </div>
-      </div>
-      <div className="card">
+      </div></>}
+      {lotsOnly && <div className="card">
         <div className="card-title">
           <h2>Lot คงเหลือ</h2>
           <div className="stock-card-lot-actions">
@@ -488,7 +488,7 @@ export default function StockCardPage() {
           </table>
           {!lotList.length && <Empty />}
         </div>
-      </div>
+      </div>}
       {confirmDelete && (
         <ConfirmModal
           title={`ลบรายการ Stock Card ${visibleSelected.length} รายการ`}
