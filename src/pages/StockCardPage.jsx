@@ -30,7 +30,7 @@ const normalizeLotDate = (value) => {
     : "";
 };
 
-export default function StockCardPage({ lotsOnly = false }) {
+export default function StockCardPage({ lotsOnly = false, embedded = false }) {
   const { products, movements, lots, removeStockCardLots } = useApp(),
     [params] = useSearchParams();
   const mapLocation = params.get("location") || "",
@@ -215,7 +215,7 @@ export default function StockCardPage({ lotsOnly = false }) {
   };
   return (
     <>
-      <PageHeader
+      {!embedded && <PageHeader
         title={lotsOnly ? "Lot คงเหลือ" : "Stock Card"}
         subtitle={lotsOnly ? "ตรวจสอบสินค้าคงเหลือแยกตาม Lot วันที่รับ คลัง และจุดเก็บ" : "ตรวจสอบวันที่ทำรายการ ประเภทรายการ และยอดคงเหลือ"}
         actions={
@@ -227,8 +227,8 @@ export default function StockCardPage({ lotsOnly = false }) {
             name={lotsOnly ? "CSP-lot-balance" : "CSP-stock-card"}
           />
         }
-      />
-      <ReportNavigation />
+      />}
+      {!embedded && <ReportNavigation />}
       <div className="card filters">
         <label>
           ค้นหาสินค้า / จุดเก็บ

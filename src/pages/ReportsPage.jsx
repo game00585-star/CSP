@@ -5,8 +5,9 @@ import {warehouseGroups,movementLabels} from '../data/constants';
 import {stockStatus,fmt,printHtml} from '../utils/helpers';
 import {PageHeader,ExportButton,StatusBadge,Empty,Modal} from '../components/common';
 import ReportNavigation from '../components/ReportNavigation';
+import StockCardPage from './StockCardPage';
 
-const reports=['Stock คงเหลือ','รายการรับสินค้า','รายการจ่ายสินค้า','รายการโอนคลัง'];
+const reports=['Stock คงเหลือ','รายการรับสินค้า','รายการจ่ายสินค้า','รายการโอนคลัง','Stock Card','Lot คงเหลือ'];
 const emptyFilters={from:'',to:'',group:'',lotDate:'',search:''};
 const movementTypes={1:['RECEIVE'],2:['ISSUE'],3:['TRANSFER_OUT'],4:null};
 const includesSearch=(item,search)=>!search||`${item.productName||''} ${item.productCode||''} ${item.transactionDate||''} ${item.receiveDate||''} ${item.issueDate||''} ${item.lotNo||''} ${item.lotSummary||''}`.toLowerCase().includes(search.toLowerCase());
@@ -46,9 +47,15 @@ export default function ReportsPage(){
   const loadEvidence=event=>{const file=event.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){setManageError('กรุณาเลือกไฟล์รูปภาพเท่านั้น');return}if(file.size>5*1024*1024){setManageError('รูปภาพต้องมีขนาดไม่เกิน 5 MB');return}const reader=new FileReader();reader.onload=()=>{setEvidence({name:file.name,type:file.type,size:file.size,dataUrl:reader.result});setManageError('')};reader.readAsDataURL(file)};
   const confirmManage=()=>{try{requestMovementChange(manage.mode==='edit'?'EDIT':'DELETE',manage.movement.id,quantity,reason,evidence);setManage(null)}catch(actionError){setManageError(actionError.message)}};
 
+  if(tab>=4)return <>
+    <PageHeader title="รายงาน" subtitle="วิเคราะห์ข้อมูลคลังสินค้า Lot วันที่รับ-จ่าย และส่งออก Excel/PDF"/>
+    <div className="report-tabs">{reports.map((report,index)=><button key={report} className={tab===index?'active':''} onClick={()=>setTab(index)}>{report}</button>)}</div>
+    <StockCardPage lotsOnly={tab===5} embedded/>
+  </>;
+
   return <>
     <PageHeader title="รายงาน" subtitle="วิเคราะห์ข้อมูลคลังสินค้า Lot วันที่รับ-จ่าย และส่งออก Excel/PDF" actions={<><button className="btn secondary" onClick={exportPdf}><FileText/> Export PDF</button><ExportButton rows={exportRows} name={`CSP-report-${tab+1}`}/></>}/>
-    <ReportNavigation>{reports.map((report,index)=><button key={report} className={tab===index?'active':''} onClick={()=>setTab(index)}>{report}</button>)}</ReportNavigation>
+    <ReportNavigation hideLinks>{reports.map((report,index)=><button key={report} className={tab===index?'active':''} onClick={()=>setTab(index)}>{report}</button>)}</ReportNavigation>
     <div className="card filters">
       <label>วันที่เริ่มต้น<input type="date" value={draft.from} onChange={event=>change('from',event.target.value)}/></label>
       <label>วันที่สิ้นสุด<input type="date" value={draft.to} onChange={event=>change('to',event.target.value)}/></label>
