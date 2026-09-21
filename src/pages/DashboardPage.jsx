@@ -28,6 +28,7 @@ import { useApp } from "../context/AppContext";
 import { warehouseGroups, movementLabels } from "../data/constants";
 import { fmt, localDateKey, stockStatus } from "../utils/helpers";
 import { PageHeader, StatCard, StatusBadge, Empty } from "../components/common";
+import PowerPointExport from "../components/PowerPointExport";
 
 const dayMs = 24 * 60 * 60 * 1000;
 const validDate = (year, month, day) => {
@@ -212,6 +213,7 @@ export default function DashboardPage() {
       <PageHeader
         title="ภาพรวมคลังสินค้า"
         subtitle="ข้อมูลการดำเนินงานล่าสุดของ CSP Foods Supply"
+        actions={<PowerPointExport name="CSP-สรุปภาพรวมคลังสินค้า"/>}
       />
       <div className="stats-grid">
         {cards.map(([Icon, label, value, unit, color, to]) => (

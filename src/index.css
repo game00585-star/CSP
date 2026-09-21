@@ -266,6 +266,14 @@ html.dark-theme .warehouse-zone { border-color: #32445a; background: #162235; }
 .map-insights.compact .map-donut { min-height: 155px; }
 .map-insights.compact .map-donut > div:last-child b { font-size: 20px; }
 .map-insights.compact .map-chart-legend { gap: 9px; font-size: 9px; }
+.ppt-export-form { display:grid; gap:13px; }
+.ppt-export-form>p { margin:0; color:#64748b; line-height:1.6; }
+.ppt-export-icon { width:52px; height:52px; display:grid; place-items:center; border-radius:14px; background:#eaf2ff; color:#2563eb; }
+.ppt-export-icon svg { width:27px; height:27px; }
+.ppt-export-form label { color:#475569; font-size:12px; font-weight:700; }
+.ppt-export-form input,.ppt-export-form textarea { display:block; width:100%; margin-top:6px; border:1px solid #cbd5e1; border-radius:9px; padding:10px 12px; font:inherit; }
+.ppt-export-form textarea { min-height:130px; resize:vertical; }
+.map-ppt-action { display:flex; justify-content:flex-end; margin:-6px 0 10px; }
 .map-activity { margin-top: 12px; padding: 14px 16px 8px; }
 .map-activity table { font-size: 11px; }
 .map-activity th { font-size: 9px; }
