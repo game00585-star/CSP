@@ -75,10 +75,7 @@ export default function TransactionPage({ type }) {
       lots,
       storageLocations,
       activePeriod,
-      receive,
-      issue,
-      transfer,
-      addDocument,
+      postWarehouseTransaction,
       setToast,
     } = useApp();
   const [doc, setDoc] = useState(() => docNo(c.prefix)),
@@ -273,7 +270,8 @@ export default function TransactionPage({ type }) {
             destLocation.capacity,
         missingWeight = isPackConversion(item) && !packWeight(item.productName);
       return (
-        item.qty <= 0 ||
+        !Number.isFinite(Number(item.qty)) ||
+        Number(item.qty) <= 0 ||
         !location ||
         missingWeight ||
         (type === "transfer" &&
@@ -333,26 +331,7 @@ export default function TransactionPage({ type }) {
         items: documentItems,
         signatures: c.signatures,
       };
-      items.forEach((item) =>
-        type === "receive"
-          ? receive(item.id, stockQty(item), doc, remark, {
-              lotNo: item.lotNo,
-              date,
-              locationId: item.locationId,
-              receivedKg: isPackConversion(item) ? item.qty : null,
-              kgPerPack: isPackConversion(item)
-                ? packWeight(item.productName)
-                : null,
-            })
-          : type === "issue"
-            ? issue(item.id, item.qty, doc, remark, { lotId: item.lotId, date })
-            : transfer(item.id, item.qty, dest, doc, {
-                lotId: item.lotId,
-                date,
-                destLocationId: item.destLocationId,
-              }),
-      );
-      addDocument(documentData);
+      postWarehouseTransaction({...documentData,items:documentItems.map((item,index)=>({...item,id:items[index].id,lotId:items[index].lotId,locationId:items[index].locationId,destLocationId:items[index].destLocationId}))});
       removeDraft();
       setPrintDocument(documentData);
       setItems([]);
@@ -794,7 +773,8 @@ export default function TransactionPage({ type }) {
                           <input
                             className="table-input"
                             type="number"
-                            min="1"
+                            min="0"
+                            step="any"
                             value={item.qty}
                             onChange={(event) =>
                               update(item.id, "qty", event.target.value)
