@@ -213,7 +213,6 @@ export default function DashboardPage() {
       <PageHeader
         title="ภาพรวมคลังสินค้า"
         subtitle="ข้อมูลการดำเนินงานล่าสุดของ CSP Foods Supply"
-        actions={<PowerPointExport name="CSP-สรุปภาพรวมคลังสินค้า"/>}
       />
       <div className="stats-grid">
         {cards.map(([Icon, label, value, unit, color, to]) => (
@@ -339,6 +338,7 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="dashboard-chart-filters">
+            <div className="dashboard-chart-export"><PowerPointExport name="CSP-สรุปภาพรวมคลังสินค้า"/></div>
             <label>
               คลัง
               <select
