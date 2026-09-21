@@ -32,8 +32,9 @@ const normalizeLotDate = (value) => {
 
 export default function StockCardPage({ lotsOnly = false, embedded = false }) {
   const { products, movements, lots, removeStockCardLots } = useApp(),
-    [params] = useSearchParams();
-  const mapLocation = params.get("location") || "",
+    [params,setParams] = useSearchParams();
+  const mapLocationId = params.get("locationId") || "",
+    mapLocation = params.get("location") || "",
     mapProduct = params.get("product") || "",
     mapGroup = params.get("group") || "",
     mapType = params.get("type") || "",
@@ -76,13 +77,12 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
           (lot) =>
             lot.productId === item.id &&
             Number(lot.quantityRemaining) > 0 &&
-            String(lot.locationName || "")
-              .toLowerCase()
-              .includes(term),
+            ((!mapLocationId && String(lot.locationName || "").toLowerCase().includes(term)) ||
+              (mapLocationId && lot.locationId === mapLocationId)),
         );
         return matchesProduct || matchesLocation;
       }),
-    [products, lots, productSearch, group, status],
+    [products, lots, productSearch, group, status, mapLocationId],
   );
   const selected = products.find((item) => item.id === product);
   const list = useMemo(
@@ -101,10 +101,12 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
               stockStatus(
                 movementProduct || { currentStock: 0, minStock: 0 },
               ) === "หมด");
+        const movementLot=lots.find(lot=>lot.id===movement.lotId),locationLots=lots.filter(lot=>lot.productId===movement.productId&&Number(lot.quantityRemaining)>0),matchesLocation=!mapLocationId&&!mapLocation||movement.locationId===mapLocationId||movementLot?.locationId===mapLocationId||(!mapLocationId&&String(movement.locationName||'').toLowerCase()===mapLocation.toLowerCase())||locationLots.some(lot=>(mapLocationId&&lot.locationId===mapLocationId)||(!mapLocationId&&String(lot.locationName||'').toLowerCase()===mapLocation.toLowerCase()));
         return (
           (!product || movement.productId === product) &&
           matchesStatus &&
-          (!productSearch ||
+          matchesLocation &&
+          (!productSearch || mapLocation ||
             `${movement.productName} ${movement.productCode} ${movement.barcode} ${movement.locationName}`
               .toLowerCase()
               .includes(productSearch.toLowerCase())) &&
@@ -129,6 +131,9 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
       status,
       from,
       to,
+      lots,
+      mapLocation,
+      mapLocationId,
     ],
   );
   const lotList = useMemo(
@@ -147,6 +152,8 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
                   "หมด");
           return (
             Number(lot.quantityRemaining) > 0 &&
+            (!mapLocationId || lot.locationId === mapLocationId) &&
+            (!mapLocationId && mapLocation ? String(lot.locationName||'').toLowerCase()===mapLocation.toLowerCase() : true) &&
             matchesStatus &&
             (!product || lot.productId === product) &&
             (!productSearch ||
@@ -160,7 +167,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
           );
         })
         .sort((a, b) => a.receivedDate.localeCompare(b.receivedDate)),
-    [lots, products, product, productSearch, lotSearch, group, status, from, to],
+    [lots, products, product, productSearch, lotSearch, group, status, from, to, mapLocation, mapLocationId],
   );
   const totals = {
     in: list.reduce((sum, movement) => sum + Number(movement.quantityIn || 0), 0),
@@ -203,6 +210,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     setConfirmDelete(false);
   };
   const clear = () => {
+    setParams({});
     setProduct("");
     setProductSearch("");
     setLotSearch("");
@@ -213,6 +221,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     setTo("");
     setSelectedLots([]);
   };
+  const movementLocation=movement=>movement.locationName||lots.find(lot=>lot.id===movement.lotId)?.locationName||(mapLocation&&lots.some(lot=>lot.productId===movement.productId&&Number(lot.quantityRemaining)>0&&((mapLocationId&&lot.locationId===mapLocationId)||(!mapLocationId&&lot.locationName===mapLocation)))?mapLocation:'ไม่ระบุจุดเก็บ');
   return (
     <>
       {!embedded && <PageHeader
@@ -385,6 +394,10 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
           onClick={() => setType("TRANSFER")}
         />
       </div>
+      {(mapLocationId||mapLocation)&&<div className="card stock-location-card">
+        <div className="card-title"><div><h2>สินค้าคงเหลือที่ {mapLocation||'จุดเก็บที่เลือก'}</h2><p>ข้อมูลอ้างอิงจาก Lot คงเหลือที่ใช้คำนวณความจุในแผนที่จุดเก็บ</p></div><span className="movement-result-count">{lotList.length} Lot</span></div>
+        <div className="table-wrap"><table><thead><tr><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>วันที่รับ</th><th>คงเหลือ</th><th>หน่วย</th></tr></thead><tbody>{lotList.map(lot=>{const lotProduct=products.find(item=>item.id===lot.productId);return <tr key={lot.id}><td><b>{lot.productCode||lotProduct?.productCode||'—'}</b></td><td>{lot.productName||lotProduct?.productName||'—'}</td><td>{lot.warehouseGroup||lotProduct?.warehouseGroup||'—'}<small>{lot.locationName||mapLocation||'ไม่ระบุจุดเก็บ'}</small></td><td><b>{lot.lotNo||'—'}</b></td><td>{lot.receivedDate||'—'}</td><td className="num"><b>{fmt(lot.quantityRemaining)}</b></td><td>{lotProduct?.unit||'—'}</td></tr>})}</tbody></table>{!lotList.length&&<Empty/>}</div>
+      </div>}
       <div className="card stock-movement-card">
         <div className="card-title">
           <div><h2>รายการเคลื่อนไหว</h2><p>แยกตามวันที่และประเภท รับเข้า จ่ายออก โอนเข้า และโอนออก</p></div>
@@ -393,7 +406,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
         <div className="table-wrap">
           <table>
             <thead><tr><th>วันที่ทำรายการ</th><th>ประเภท</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>IN</th><th>OUT</th><th>คงเหลือหลังทำรายการ</th><th>ผู้ทำรายการ</th></tr></thead>
-            <tbody>{list.map(movement=><tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td>{movement.documentNo||'—'}</td><td>{movement.productCode||'—'}</td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movement.locationName||'ไม่ระบุจุดเก็บ'}</small></td><td>{movement.lotNo||'—'}</td><td className="qty-in">{movement.quantityIn?fmt(movement.quantityIn):'—'}</td><td className="qty-out">{movement.quantityOut?fmt(movement.quantityOut):'—'}</td><td className="num">{movement.balanceAfter==null?'—':fmt(movement.balanceAfter)}</td><td>{movement.userName||movement.createdBy||'—'}</td></tr>)}</tbody>
+            <tbody>{list.map(movement=><tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td>{movement.documentNo||'—'}</td><td>{movement.productCode||'—'}</td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movementLocation(movement)}</small></td><td>{movement.lotNo||'—'}</td><td className="qty-in">{movement.quantityIn?fmt(movement.quantityIn):'—'}</td><td className="qty-out">{movement.quantityOut?fmt(movement.quantityOut):'—'}</td><td className="num">{movement.balanceAfter==null?'—':fmt(movement.balanceAfter)}</td><td>{movement.userName||movement.createdBy||'—'}</td></tr>)}</tbody>
           </table>
           {!list.length&&<Empty/>}
         </div>
