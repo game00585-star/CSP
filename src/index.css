@@ -260,6 +260,12 @@ html.dark-theme .warehouse-zone { border-color: #32445a; background: #162235; }
 .map-chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .map-chart-legend i { width: 8px; height: 8px; border-radius: 50%; }
 .map-chart-legend b { color: #334155; }
+.map-insights.compact { gap: 10px; }
+.map-insights.compact .map-chart-card { padding: 10px 13px; }
+.map-insights.compact .map-chart-card h3 { margin-bottom: 5px; font-size: 11px; }
+.map-insights.compact .map-donut { min-height: 155px; }
+.map-insights.compact .map-donut > div:last-child b { font-size: 20px; }
+.map-insights.compact .map-chart-legend { gap: 9px; font-size: 9px; }
 .map-activity { margin-top: 12px; padding: 14px 16px 8px; }
 .map-activity table { font-size: 11px; }
 .map-activity th { font-size: 9px; }
