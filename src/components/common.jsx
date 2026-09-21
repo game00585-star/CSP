@@ -1,5 +1,6 @@
 import { useId } from "react";
 import {
+  ArrowLeft,
   X,
   Search,
   ChevronLeft,
@@ -9,13 +10,25 @@ import {
 } from "lucide-react";
 import { exportExcel } from "../utils/helpers";
 export function PageHeader({ title, subtitle, actions }) {
+  const showStockCountBack = title === "นับสต็อกสินค้า" && String(subtitle || "").startsWith("SC-");
   return (
     <div className="page-head">
       <div>
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>
-      <div className="actions">{actions}</div>
+      <div className="actions">
+        {showStockCountBack && (
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => window.dispatchEvent(new CustomEvent("csp-stock-count-back"))}
+          >
+            <ArrowLeft /> กลับหน้าสร้าง / รายการเอกสาร
+          </button>
+        )}
+        {actions}
+      </div>
     </div>
   );
 }
