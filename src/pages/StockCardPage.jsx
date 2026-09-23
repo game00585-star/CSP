@@ -19,6 +19,7 @@ import {
   ConfirmModal,
 } from "../components/common";
 import ReportNavigation from "../components/ReportNavigation";
+import "./warehouseEnhancements.css";
 
 const normalizeLotDate = (value) => {
   const text = String(value || "").trim();
@@ -241,11 +242,10 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
   };
   const movementLocation=movement=>movement.locationName||lots.find(lot=>lot.id===movement.lotId)?.locationName||(mapLocation&&lots.some(lot=>lot.productId===movement.productId&&Number(lot.quantityRemaining)>0&&((mapLocationId&&lot.locationId===mapLocationId)||(!mapLocationId&&lot.locationName===mapLocation)))?mapLocation:'ไม่ระบุจุดเก็บ');
   const visibleMapProducts=[...new Set(list.map(movement=>movement.productId).filter(id=>products.some(product=>product.id===id)))];
-  const selectedMapGroup=products.find(product=>selectedMapProducts.includes(product.id))?.warehouseGroup||'';
-  const toggleMapProduct=(productId)=>{const target=products.find(product=>product.id===productId);setSelectedMapProducts(current=>{if(current.includes(productId))return current.filter(id=>id!==productId);const sameGroup=current.filter(id=>products.find(product=>product.id===id)?.warehouseGroup===target?.warehouseGroup);return[...sameGroup,productId]})};
+  const toggleMapProduct=(productId)=>setSelectedMapProducts(current=>current.includes(productId)?current.filter(id=>id!==productId):[...current,productId]);
   const allMapProductsSelected=visibleMapProducts.length>0&&visibleMapProducts.every(id=>selectedMapProducts.includes(id));
-  const toggleAllMapProducts=()=>{if(allMapProductsSelected){setSelectedMapProducts([]);return}const first=products.find(product=>product.id===visibleMapProducts[0]),sameGroup=visibleMapProducts.filter(id=>products.find(product=>product.id===id)?.warehouseGroup===first?.warehouseGroup);setSelectedMapProducts(sameGroup)};
-  const openMapAssignment=()=>{if(!selectedMapProducts.length)return;const targetWarehouse=warehouseGroups.find(item=>item.id===selectedMapGroup);sessionStorage.setItem('csp_map_product_selection',JSON.stringify(selectedMapProducts));navigate(`/warehouse-map/${targetWarehouse?.path||'all'}?assign=1`)};
+  const toggleAllMapProducts=()=>setSelectedMapProducts(allMapProductsSelected?[]:visibleMapProducts);
+  const openMapAssignment=()=>{if(!selectedMapProducts.length)return;const selectedGroups=[...new Set(selectedMapProducts.map(id=>products.find(product=>product.id===id)?.warehouseGroup).filter(Boolean))],targetWarehouse=selectedGroups.length===1?warehouseGroups.find(item=>item.id===selectedGroups[0]):null;sessionStorage.setItem('csp_map_product_selection',JSON.stringify(selectedMapProducts));navigate(`/warehouse-map/${targetWarehouse?.path||'all'}?assign=1`)};
   const stockCardExportRows=list.map(movement=>({
     'วันที่ทำรายการ':movement.transactionDate||'—',
     'ประเภท':movementLabels[movement.transactionType]||movement.transactionType||'—',
@@ -272,7 +272,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
         }
       />}
       {!embedded && <ReportNavigation />}
-      <div className="card filters">
+      <div className="card filters report-unified-filters">
         <label>
           ค้นหาสินค้า / จุดเก็บ
           <div className="filter-search">

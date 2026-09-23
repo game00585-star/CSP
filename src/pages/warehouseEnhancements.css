@@ -60,6 +60,13 @@
 @media(max-width:640px){.map-remove-select-all{align-items:flex-start;flex-direction:column}.map-remove-list>div:not(.map-remove-empty){align-items:flex-start;flex-wrap:wrap}.map-remove-list span{flex-basis:calc(100% - 34px)}.map-remove-list .btn{margin-left:29px}}
 .stock-card-lot-actions { display: flex; align-items: center; gap: 8px; }
 .stock-card-lot-actions .btn svg { width: 16px; }
+.report-unified-filters { display:grid; grid-template-columns:repeat(6,minmax(150px,1fr)); align-items:end; gap:12px; }
+.report-unified-filters label { min-width:0; }
+.report-unified-filters input,.report-unified-filters select,.report-unified-filters .filter-search { width:100%; min-width:0; }
+.report-unified-filters .filter-search input { width:100%; }
+.report-unified-filters .full,.report-unified-filters .alert { grid-column:1/-1; }
+@media (max-width:1200px){.report-unified-filters{grid-template-columns:repeat(3,minmax(150px,1fr))}}
+@media (max-width:700px){.report-unified-filters{grid-template-columns:1fr}}
 .click-to-assign { margin-top: 5px; border-radius: 8px; padding: 3px 7px; color: #fff; background: #2563eb; font-size: 8px; font-weight: 700; }
 
 @media(max-width:700px){.header-name-grid{grid-template-columns:1fr}.map-assign-floating{right:14px;bottom:14px;left:14px;justify-content:center}}
