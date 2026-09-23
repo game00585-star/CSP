@@ -60,6 +60,10 @@
 @media(max-width:640px){.map-remove-select-all{align-items:flex-start;flex-direction:column}.map-remove-list>div:not(.map-remove-empty){align-items:flex-start;flex-wrap:wrap}.map-remove-list span{flex-basis:calc(100% - 34px)}.map-remove-list .btn{margin-left:29px}}
 .stock-card-lot-actions { display: flex; align-items: center; gap: 8px; }
 .stock-card-lot-actions .btn svg { width: 16px; }
+.selectable-row { cursor:pointer; }
+.selection-floating-actions { position:fixed; right:26px; bottom:22px; z-index:45; display:flex; gap:9px; align-items:center; padding:9px; border-radius:12px; background:#fff; border:1px solid #dbe4f0; box-shadow:0 12px 32px #0f172a30; }
+.selection-floating-actions .btn { min-height:42px; }
+@media (max-width:700px){.selection-floating-actions{right:12px;bottom:12px;left:12px;justify-content:flex-end;flex-wrap:wrap}}
 .report-unified-filters { display:grid; grid-template-columns:repeat(6,minmax(150px,1fr)); align-items:end; gap:12px; }
 .report-unified-filters label { min-width:0; }
 .report-unified-filters input,.report-unified-filters select,.report-unified-filters .filter-search { width:100%; min-width:0; }
@@ -82,3 +86,20 @@
 .count-result-table table { min-width:1350px; }
 @media(max-width:900px){.count-summary-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:540px){.count-summary-stats{grid-template-columns:repeat(2,1fr)}}
+
+html.dark-theme .header-name-grid label { color:#c0cad8; }
+html.dark-theme .header-name-grid small { color:#8291a7; }
+html.dark-theme .map-product-tray { background:linear-gradient(120deg,#132b4d,#111827); border-color:#365b88; }
+html.dark-theme .map-product-tray>div:first-child { color:#93c5fd; }
+html.dark-theme .map-product-tray small { color:#a8b5c7; }
+html.dark-theme .map-product-chips>div { background:#172338; border-color:#365b88; }
+html.dark-theme .map-product-chips button { background:#442128; color:#fca5a5; }
+html.dark-theme .map-remove-products>p { background:#382b13; border-color:#8a6115; color:#fde68a; }
+html.dark-theme .map-remove-select-all { background:#151f30; border-color:#3b4b61; color:#e2e8f0; }
+html.dark-theme .map-remove-list>div:not(.map-remove-empty) { background:#151f30; border-color:#334155; }
+html.dark-theme .map-remove-list>div.selected { background:#3a2028; border-color:#f87171; }
+html.dark-theme .map-remove-list b,
+html.dark-theme .map-remove-list small strong { color:#f1f5f9; }
+html.dark-theme .map-remove-list small { color:#a8b5c7; }
+html.dark-theme .map-remove-empty { background:#151f30; color:#94a3b8; }
+html.dark-theme .selection-floating-actions { background:#111827; border-color:#334155; box-shadow:0 16px 42px #020617aa; }

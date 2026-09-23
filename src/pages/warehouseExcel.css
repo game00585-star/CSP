@@ -338,3 +338,16 @@
 @media (min-width: 1280px) {
   .movement-ledger-table table { min-width: 100%; }
 }
+
+html.dark-theme .excel-source-table tbody tr:hover td { background:#1f2d42; }
+html.dark-theme .opening-flow-form select,
+html.dark-theme .opening-flow-form input,
+html.dark-theme .opening-flow-form textarea,
+html.dark-theme .opening-location-select { background:#0f172a; border-color:#3b4b61; color:#f8fafc; }
+html.dark-theme .opening-location-select:disabled { background:#172033; color:#8291a7; }
+html.dark-theme .opening-flow-note { background:#382b13; border-color:#8a6115; color:#fde68a; }
+html.dark-theme .movement-day-selector button { background:#172338; border-color:#3b4b61; color:#cbd5e1; }
+html.dark-theme .movement-day-selector button:hover { background:#1f3150; border-color:#60a5fa; }
+html.dark-theme .movement-day-selector button.active { background:#2563eb; border-color:#60a5fa; color:#fff; }
+html.dark-theme .movement-day-group { border-color:#263548; }
+html.dark-theme .movement-day-row:nth-child(even) { background:#141e2e; }
