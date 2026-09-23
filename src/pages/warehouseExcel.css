@@ -274,6 +274,22 @@
 .movement-day-row small { color:#64748b; text-align:right; }
 .movement-type { font-size:11px; font-weight:700; color:#1d4ed8; }
 @media (max-width:800px){.movement-day-row{grid-template-columns:65px 105px 1fr}.movement-day-row strong,.movement-day-row small{grid-column:3;text-align:left}}
+.movement-day-panel { overflow:hidden; }
+.movement-day-panel>.card-title { padding:17px 18px; margin:0; border-bottom:1px solid #e5eaf1; }
+.movement-day-panel>.movement-day-selector { padding:14px 16px; margin:0; border-bottom:1px solid #e5eaf1; }
+.movement-day-table table { min-width:1380px; table-layout:fixed; }
+.movement-day-table th,.movement-day-table td { padding:10px 9px; vertical-align:middle; white-space:normal; }
+.movement-day-table th:nth-child(1),.movement-day-table td:nth-child(1){width:120px;text-align:left}
+.movement-day-table th:nth-child(2),.movement-day-table td:nth-child(2){width:105px;text-align:left}
+.movement-day-table th:nth-child(3),.movement-day-table td:nth-child(3){width:190px;text-align:left}
+.movement-day-table th:nth-child(4),.movement-day-table td:nth-child(4){width:105px;text-align:left}
+.movement-day-table th:nth-child(5),.movement-day-table td:nth-child(5){width:150px;text-align:left}
+.movement-day-table th:nth-child(6),.movement-day-table td:nth-child(6){width:120px;text-align:left}
+.movement-day-table th:nth-child(7),.movement-day-table td:nth-child(7){width:250px;text-align:left}
+.movement-day-table th:nth-child(8),.movement-day-table td:nth-child(8){width:130px;text-align:left}
+.movement-day-table th:nth-child(9),.movement-day-table td:nth-child(9){width:105px;text-align:left}
+.movement-day-table th:nth-child(10),.movement-day-table td:nth-child(10){width:115px;text-align:right}
+.movement-day-table th:nth-child(11),.movement-day-table td:nth-child(11){width:120px;text-align:left}
 
 .excel-source-table tbody tr:hover td {
   background: #f8fbff;
