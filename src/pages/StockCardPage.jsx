@@ -239,14 +239,13 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
   const movementLocation=movement=>movement.locationName||lots.find(lot=>lot.id===movement.lotId)?.locationName||(mapLocation&&lots.some(lot=>lot.productId===movement.productId&&Number(lot.quantityRemaining)>0&&((mapLocationId&&lot.locationId===mapLocationId)||(!mapLocationId&&lot.locationName===mapLocation)))?mapLocation:'ไม่ระบุจุดเก็บ');
   const stockCardExportRows=list.map(movement=>({
     'วันที่ทำรายการ':movement.transactionDate||'—',
-    'เวลา':movement.transactionTime||'—',
-    'ประเภท':movementLabels[movement.transactionType]||movement.transactionType,
+    'ประเภท':movementLabels[movement.transactionType]||movement.transactionType||'—',
     'ทำรายการ':movementActionText(movement),
+    'จุดเก็บ':movementLocation(movement),
     'เลขที่เอกสาร':movement.documentNo||'—',
     'รหัสสินค้า':movement.productCode||'—',
     'ชื่อสินค้า':movement.productName||'—',
-    'คลัง':movement.warehouseGroup||'—',
-    'จุดเก็บ':movementLocation(movement),
+    'คลัง / จุดเก็บ':`${movement.warehouseGroup||'—'} / ${movementLocation(movement)}`,
     'Lot':movement.lotNo||'—',
     'จำนวน':Number(movement.quantityIn||movement.quantityOut||0),
     'ผู้ทำรายการ':movement.userName||movement.createdBy||'—',
@@ -402,8 +401,8 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
         </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>วันที่ทำรายการ</th><th>ประเภท</th><th>ทำรายการ</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>จำนวน</th><th>ผู้ทำรายการ</th></tr></thead>
-            <tbody>{list.map(movement=>{const incoming=movement.transactionType==='RECEIVE'||movement.transactionType==='TRANSFER_IN',quantity=Number(movement.quantityIn||movement.quantityOut||0);return <tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td><b>{movementActionText(movement)}</b></td><td>{movement.documentNo||'—'}</td><td>{movement.productCode||'—'}</td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movementLocation(movement)}</small></td><td>{movement.lotNo||'—'}</td><td className={incoming?'qty-in':'qty-out'}><b>{quantity?fmt(quantity):'—'}</b></td><td>{movement.userName||movement.createdBy||'—'}</td></tr>})}</tbody>
+            <thead><tr><th>วันที่ทำรายการ</th><th>ประเภท</th><th>ทำรายการ</th><th>จุดเก็บ</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>จำนวน</th><th>ผู้ทำรายการ</th></tr></thead>
+            <tbody>{list.map(movement=>{const incoming=movement.transactionType==='RECEIVE'||movement.transactionType==='TRANSFER_IN',quantity=Number(movement.quantityIn||movement.quantityOut||0);return <tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td><b>{movementActionText(movement)}</b></td><td>{movementLocation(movement)}</td><td>{movement.documentNo||'—'}</td><td><b>{movement.productCode||'—'}</b></td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movementLocation(movement)}</small></td><td>{movement.lotNo||'—'}</td><td className={incoming?'qty-in':'qty-out'}><b>{quantity?fmt(quantity):'—'}</b></td><td>{movement.userName||movement.createdBy||'—'}</td></tr>})}</tbody>
           </table>
           {!list.length&&<Empty/>}
         </div>

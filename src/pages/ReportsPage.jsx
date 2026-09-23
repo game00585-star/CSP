@@ -7,7 +7,8 @@ import {PageHeader,ExportButton,StatusBadge,Empty,Modal} from '../components/com
 import ReportNavigation from '../components/ReportNavigation';
 import StockCardPage from './StockCardPage';
 
-const reports=['Stock คงเหลือ','รายการรับสินค้า','รายการจ่ายสินค้า','รายการโอนคลัง','Stock Card','Lot คงเหลือ'];
+const reports={0:'Stock คงเหลือ',4:'Stock Card',5:'Lot คงเหลือ'};
+const reportTabs=[{id:0,label:'Stock คงเหลือ'},{id:4,label:'Stock Card'},{id:5,label:'Lot คงเหลือ'}];
 const emptyFilters={from:'',to:'',group:'',lotDate:'',search:''};
 const movementTypes={1:['RECEIVE'],2:['ISSUE'],3:['TRANSFER_OUT'],4:null};
 const includesSearch=(item,search)=>!search||`${item.productName||''} ${item.productCode||''} ${item.transactionDate||''} ${item.receiveDate||''} ${item.issueDate||''} ${item.lotNo||''} ${item.lotSummary||''}`.toLowerCase().includes(search.toLowerCase());
@@ -49,13 +50,13 @@ export default function ReportsPage(){
 
   if(tab>=4)return <>
     <PageHeader title="รายงาน" subtitle="วิเคราะห์ข้อมูลคลังสินค้า Lot วันที่รับ-จ่าย และส่งออก Excel/PDF"/>
-    <div className="report-tabs">{reports.map((report,index)=><button key={report} className={tab===index?'active':''} onClick={()=>setTab(index)}>{report}</button>)}</div>
+    <div className="report-tabs">{reportTabs.map(report=><button key={report.id} className={tab===report.id?'active':''} onClick={()=>setTab(report.id)}>{report.label}</button>)}</div>
     <StockCardPage lotsOnly={tab===5} embedded/>
   </>;
 
   return <>
     <PageHeader title="รายงาน" subtitle="วิเคราะห์ข้อมูลคลังสินค้า Lot วันที่รับ-จ่าย และส่งออก Excel/PDF" actions={<><button className="btn secondary" onClick={exportPdf}><FileText/> Export PDF</button><ExportButton rows={exportRows} name={`CSP-report-${tab+1}`}/></>}/>
-    <ReportNavigation hideLinks>{reports.map((report,index)=><button key={report} className={tab===index?'active':''} onClick={()=>setTab(index)}>{report}</button>)}</ReportNavigation>
+    <ReportNavigation hideLinks>{reportTabs.map(report=><button key={report.id} className={tab===report.id?'active':''} onClick={()=>setTab(report.id)}>{report.label}</button>)}</ReportNavigation>
     <div className="card filters">
       <label>วันที่เริ่มต้น<input type="date" value={draft.from} onChange={event=>change('from',event.target.value)}/></label>
       <label>วันที่สิ้นสุด<input type="date" value={draft.to} onChange={event=>change('to',event.target.value)}/></label>
