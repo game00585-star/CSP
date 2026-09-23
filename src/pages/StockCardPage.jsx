@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ArrowRightLeft,
+  MapPinned,
   Search,
   Trash2,
 } from "lucide-react";
@@ -41,7 +42,7 @@ const movementActionText = (movement) => {
 
 export default function StockCardPage({ lotsOnly = false, embedded = false }) {
   const { products, movements, lots, activePeriod, removeStockCardLots } = useApp(),
-    [params,setParams] = useSearchParams();
+    [params,setParams] = useSearchParams(),navigate=useNavigate();
   const mapLocationId = params.get("locationId") || "",
     mapLocation = params.get("location") || "",
     mapProduct = params.get("product") || "",
@@ -61,6 +62,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     [from, setFrom] = useState(mapFrom),
     [to, setTo] = useState(mapTo);
   const [selectedLots, setSelectedLots] = useState([]),
+    [selectedMapProducts,setSelectedMapProducts]=useState([]),
     [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => {
     setProduct(mapProduct);
@@ -72,6 +74,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     setFrom(mapFrom);
     setTo(mapTo);
     setSelectedLots([]);
+    setSelectedMapProducts([]);
   }, [mapLocation, mapProduct, mapGroup, mapType, mapStatus, mapMonth, mapFrom, mapTo]);
   const filteredProducts = useMemo(
     () =>
@@ -237,6 +240,12 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     setSelectedLots([]);
   };
   const movementLocation=movement=>movement.locationName||lots.find(lot=>lot.id===movement.lotId)?.locationName||(mapLocation&&lots.some(lot=>lot.productId===movement.productId&&Number(lot.quantityRemaining)>0&&((mapLocationId&&lot.locationId===mapLocationId)||(!mapLocationId&&lot.locationName===mapLocation)))?mapLocation:'ไม่ระบุจุดเก็บ');
+  const visibleMapProducts=[...new Set(list.map(movement=>movement.productId).filter(id=>products.some(product=>product.id===id)))];
+  const selectedMapGroup=products.find(product=>selectedMapProducts.includes(product.id))?.warehouseGroup||'';
+  const toggleMapProduct=(productId)=>{const target=products.find(product=>product.id===productId);setSelectedMapProducts(current=>{if(current.includes(productId))return current.filter(id=>id!==productId);const sameGroup=current.filter(id=>products.find(product=>product.id===id)?.warehouseGroup===target?.warehouseGroup);return[...sameGroup,productId]})};
+  const allMapProductsSelected=visibleMapProducts.length>0&&visibleMapProducts.every(id=>selectedMapProducts.includes(id));
+  const toggleAllMapProducts=()=>{if(allMapProductsSelected){setSelectedMapProducts([]);return}const first=products.find(product=>product.id===visibleMapProducts[0]),sameGroup=visibleMapProducts.filter(id=>products.find(product=>product.id===id)?.warehouseGroup===first?.warehouseGroup);setSelectedMapProducts(sameGroup)};
+  const openMapAssignment=()=>{if(!selectedMapProducts.length)return;const targetWarehouse=warehouseGroups.find(item=>item.id===selectedMapGroup);sessionStorage.setItem('csp_map_product_selection',JSON.stringify(selectedMapProducts));navigate(`/warehouse-map/${targetWarehouse?.path||'all'}?assign=1`)};
   const stockCardExportRows=list.map(movement=>({
     'วันที่ทำรายการ':movement.transactionDate||'—',
     'ประเภท':movementLabels[movement.transactionType]||movement.transactionType||'—',
@@ -397,12 +406,12 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
       <div className="card stock-movement-card">
         <div className="card-title">
           <div><h2>รายการเคลื่อนไหว</h2><p>แยกตามวันที่และประเภท รับเข้า จ่ายออก โอนเข้า และโอนออก</p></div>
-          <span className="movement-result-count">{list.length} รายการ</span>
+          <div className="stock-card-lot-actions">{selectedMapProducts.length>0&&<button className="btn primary" onClick={openMapAssignment}><MapPinned/> จัดเข้าแผนที่ ({selectedMapProducts.length})</button>}<span className="movement-result-count">{list.length} รายการ</span></div>
         </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>วันที่ทำรายการ</th><th>ประเภท</th><th>ทำรายการ</th><th>จุดเก็บ</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>จำนวน</th><th>ผู้ทำรายการ</th></tr></thead>
-            <tbody>{list.map(movement=>{const incoming=movement.transactionType==='RECEIVE'||movement.transactionType==='TRANSFER_IN',quantity=Number(movement.quantityIn||movement.quantityOut||0);return <tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td><b>{movementActionText(movement)}</b></td><td>{movementLocation(movement)}</td><td>{movement.documentNo||'—'}</td><td><b>{movement.productCode||'—'}</b></td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movementLocation(movement)}</small></td><td>{movement.lotNo||'—'}</td><td className={incoming?'qty-in':'qty-out'}><b>{quantity?fmt(quantity):'—'}</b></td><td>{movement.userName||movement.createdBy||'—'}</td></tr>})}</tbody>
+            <thead><tr><th><input type="checkbox" checked={allMapProductsSelected} onChange={toggleAllMapProducts} aria-label="เลือกสินค้าทั้งหมดเพื่อจัดเข้าแผนที่"/></th><th>วันที่ทำรายการ</th><th>ประเภท</th><th>ทำรายการ</th><th>จุดเก็บ</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>จำนวน</th><th>ผู้ทำรายการ</th></tr></thead>
+            <tbody>{list.map(movement=>{const incoming=movement.transactionType==='RECEIVE'||movement.transactionType==='TRANSFER_IN',quantity=Number(movement.quantityIn||movement.quantityOut||0),canAssign=products.some(product=>product.id===movement.productId);return <tr key={movement.id} className={selectedMapProducts.includes(movement.productId)?'selected-row':''}><td><input type="checkbox" disabled={!canAssign} checked={selectedMapProducts.includes(movement.productId)} onChange={()=>toggleMapProduct(movement.productId)} aria-label={`เลือก ${movement.productName} เพื่อจัดเข้าแผนที่`}/></td><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td><b>{movementActionText(movement)}</b></td><td>{movementLocation(movement)}</td><td>{movement.documentNo||'—'}</td><td><b>{movement.productCode||'—'}</b></td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movementLocation(movement)}</small></td><td>{movement.lotNo||'—'}</td><td className={incoming?'qty-in':'qty-out'}><b>{quantity?fmt(quantity):'—'}</b></td><td>{movement.userName||movement.createdBy||'—'}</td></tr>})}</tbody>
           </table>
           {!list.length&&<Empty/>}
         </div>
