@@ -4,7 +4,6 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   ArrowRightLeft,
-  PackageCheck,
   Search,
   Trash2,
 } from "lucide-react";
@@ -15,7 +14,6 @@ import {
   PageHeader,
   StatCard,
   ExportButton,
-  StatusBadge,
   Empty,
   ConfirmModal,
 } from "../components/common";
@@ -28,6 +26,17 @@ const normalizeLotDate = (value) => {
   return match
     ? `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`
     : "";
+};
+
+const stockCardMovementTypes = ["RECEIVE", "ISSUE", "TRANSFER_IN", "TRANSFER_OUT"];
+const movementActionText = (movement) => {
+  const source = movement.sourceWarehouse || movement.warehouseGroup || "—";
+  const destination = movement.destinationWarehouse || movement.warehouseGroup || "—";
+  if (movement.transactionType === "RECEIVE") return `รับเข้า → คลัง ${destination}`;
+  if (movement.transactionType === "ISSUE") return `จ่ายออกจากคลัง ${source}`;
+  if (movement.transactionType === "TRANSFER_OUT") return `โอนออก ${source} → ${destination}`;
+  if (movement.transactionType === "TRANSFER_IN") return `โอนเข้า ${source} → ${destination}`;
+  return movementLabels[movement.transactionType] || movement.transactionType || "—";
 };
 
 export default function StockCardPage({ lotsOnly = false, embedded = false }) {
@@ -103,6 +112,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
               ) === "หมด");
         const movementLot=lots.find(lot=>lot.id===movement.lotId),locationLots=lots.filter(lot=>lot.productId===movement.productId&&Number(lot.quantityRemaining)>0),matchesLocation=!mapLocationId&&!mapLocation||movement.locationId===mapLocationId||movementLot?.locationId===mapLocationId||(!mapLocationId&&String(movement.locationName||'').toLowerCase()===mapLocation.toLowerCase())||locationLots.some(lot=>(mapLocationId&&lot.locationId===mapLocationId)||(!mapLocationId&&String(lot.locationName||'').toLowerCase()===mapLocation.toLowerCase()));
         return (
+          stockCardMovementTypes.includes(movement.transactionType) &&
           (!product || movement.productId === product) &&
           matchesStatus &&
           matchesLocation &&
@@ -170,8 +180,12 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     [lots, products, product, productSearch, lotSearch, group, status, from, to, mapLocation, mapLocationId],
   );
   const totals = {
-    in: list.reduce((sum, movement) => sum + Number(movement.quantityIn || 0), 0),
-    out: list.reduce((sum, movement) => sum + Number(movement.quantityOut || 0), 0),
+    in: list
+      .filter((movement) => movement.transactionType === "RECEIVE")
+      .reduce((sum, movement) => sum + Number(movement.quantityIn || 0), 0),
+    out: list
+      .filter((movement) => movement.transactionType === "ISSUE")
+      .reduce((sum, movement) => sum + Number(movement.quantityOut || 0), 0),
     tin: list
       .filter((movement) => movement.transactionType === "TRANSFER_IN")
       .reduce((sum, movement) => sum + Number(movement.quantityIn || 0), 0),
@@ -179,11 +193,6 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
       .filter((movement) => movement.transactionType === "TRANSFER_OUT")
       .reduce((sum, movement) => sum + Number(movement.quantityOut || 0), 0),
   };
-  const filteredStock = lotList.reduce(
-      (sum, lot) => sum + Number(lot.quantityRemaining || 0),
-      0,
-    ),
-    hasStockFilter = Boolean(product || productSearch || lotSearch || group);
   const visibleSelected = selectedLots.filter((id) =>
       lotList.some((lot) => lot.id === id),
     ),
@@ -222,17 +231,28 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     setSelectedLots([]);
   };
   const movementLocation=movement=>movement.locationName||lots.find(lot=>lot.id===movement.lotId)?.locationName||(mapLocation&&lots.some(lot=>lot.productId===movement.productId&&Number(lot.quantityRemaining)>0&&((mapLocationId&&lot.locationId===mapLocationId)||(!mapLocationId&&lot.locationName===mapLocation)))?mapLocation:'ไม่ระบุจุดเก็บ');
+  const stockCardExportRows=list.map(movement=>({
+    'วันที่ทำรายการ':movement.transactionDate||'—',
+    'เวลา':movement.transactionTime||'—',
+    'ประเภท':movementLabels[movement.transactionType]||movement.transactionType,
+    'ทำรายการ':movementActionText(movement),
+    'เลขที่เอกสาร':movement.documentNo||'—',
+    'รหัสสินค้า':movement.productCode||'—',
+    'ชื่อสินค้า':movement.productName||'—',
+    'คลัง':movement.warehouseGroup||'—',
+    'จุดเก็บ':movementLocation(movement),
+    'Lot':movement.lotNo||'—',
+    'จำนวน':Number(movement.quantityIn||movement.quantityOut||0),
+    'ผู้ทำรายการ':movement.userName||movement.createdBy||'—',
+  }));
   return (
     <>
       {!embedded && <PageHeader
         title={lotsOnly ? "Lot คงเหลือ" : "Stock Card"}
-        subtitle={lotsOnly ? "ตรวจสอบสินค้าคงเหลือแยกตาม Lot วันที่รับ คลัง และจุดเก็บ" : "ตรวจสอบวันที่ทำรายการ ประเภทรายการ และยอดคงเหลือ"}
+        subtitle={lotsOnly ? "ตรวจสอบสินค้าคงเหลือแยกตาม Lot วันที่รับ คลัง และจุดเก็บ" : "ตรวจสอบประวัติรับเข้า จ่ายออก และโอนระหว่างคลัง"}
         actions={
           <ExportButton
-            rows={lotsOnly ? lotList : list.map((movement) => ({
-              ...movement,
-              transactionType: movementLabels[movement.transactionType],
-            }))}
+            rows={lotsOnly ? lotList : stockCardExportRows}
             name={lotsOnly ? "CSP-lot-balance" : "CSP-stock-card"}
           />
         }
@@ -297,7 +317,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
           >
             <option value="">ทุกประเภท</option>
             <option value="TRANSFER">โอนเข้าและโอนออก</option>
-            {Object.entries(movementLabels).map(([key, label]) => (
+            {Object.entries(movementLabels).filter(([key])=>stockCardMovementTypes.includes(key)).map(([key, label]) => (
               <option value={key} key={key}>
                 {label}
               </option>
@@ -346,29 +366,9 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
               {selected.warehouseGroup} · {selected.unit}
             </span>
           </div>
-          <div>
-            <small>Stock ตามตัวกรอง</small>
-            <b>{fmt(filteredStock)}</b>
-            <StatusBadge
-              status={stockStatus({ ...selected, currentStock: filteredStock })}
-            />
-          </div>
         </div>
       )}
-      {!lotsOnly && <><div className="stats-grid compact">
-        <StatCard
-          icon={PackageCheck}
-          label={
-            productSearch ? `Stock ที่ ${productSearch}` : "Stock ปัจจุบัน"
-          }
-          value={fmt(
-            hasStockFilter
-              ? filteredStock
-              : products.reduce((sum, item) => sum + item.currentStock, 0),
-          )}
-          unit={selected?.unit || "หลายหน่วย"}
-          onClick={() => setType("")}
-        />
+      {!lotsOnly && <><div className="stats-grid compact" style={{gridTemplateColumns:'repeat(3, minmax(0, 1fr))'}}>
         <StatCard
           icon={ArrowDownToLine}
           label="รับเข้ารวม"
@@ -394,10 +394,6 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
           onClick={() => setType("TRANSFER")}
         />
       </div>
-      {(mapLocationId||mapLocation)&&<div className="card stock-location-card">
-        <div className="card-title"><div><h2>สินค้าคงเหลือที่ {mapLocation||'จุดเก็บที่เลือก'}</h2><p>ข้อมูลอ้างอิงจาก Lot คงเหลือที่ใช้คำนวณความจุในแผนที่จุดเก็บ</p></div><span className="movement-result-count">{lotList.length} Lot</span></div>
-        <div className="table-wrap"><table><thead><tr><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>วันที่รับ</th><th>คงเหลือ</th><th>หน่วย</th></tr></thead><tbody>{lotList.map(lot=>{const lotProduct=products.find(item=>item.id===lot.productId);return <tr key={lot.id}><td><b>{lot.productCode||lotProduct?.productCode||'—'}</b></td><td>{lot.productName||lotProduct?.productName||'—'}</td><td>{lot.warehouseGroup||lotProduct?.warehouseGroup||'—'}<small>{lot.locationName||mapLocation||'ไม่ระบุจุดเก็บ'}</small></td><td><b>{lot.lotNo||'—'}</b></td><td>{lot.receivedDate||'—'}</td><td className="num"><b>{fmt(lot.quantityRemaining)}</b></td><td>{lotProduct?.unit||'—'}</td></tr>})}</tbody></table>{!lotList.length&&<Empty/>}</div>
-      </div>}
       <div className="card stock-movement-card">
         <div className="card-title">
           <div><h2>รายการเคลื่อนไหว</h2><p>แยกตามวันที่และประเภท รับเข้า จ่ายออก โอนเข้า และโอนออก</p></div>
@@ -405,8 +401,8 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
         </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>วันที่ทำรายการ</th><th>ประเภท</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>IN</th><th>OUT</th><th>คงเหลือหลังทำรายการ</th><th>ผู้ทำรายการ</th></tr></thead>
-            <tbody>{list.map(movement=><tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td>{movement.documentNo||'—'}</td><td>{movement.productCode||'—'}</td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movementLocation(movement)}</small></td><td>{movement.lotNo||'—'}</td><td className="qty-in">{movement.quantityIn?fmt(movement.quantityIn):'—'}</td><td className="qty-out">{movement.quantityOut?fmt(movement.quantityOut):'—'}</td><td className="num">{movement.balanceAfter==null?'—':fmt(movement.balanceAfter)}</td><td>{movement.userName||movement.createdBy||'—'}</td></tr>)}</tbody>
+            <thead><tr><th>วันที่ทำรายการ</th><th>ประเภท</th><th>ทำรายการ</th><th>เลขที่เอกสาร</th><th>รหัสสินค้า</th><th>ชื่อสินค้า</th><th>คลัง / จุดเก็บ</th><th>Lot</th><th>จำนวน</th><th>ผู้ทำรายการ</th></tr></thead>
+            <tbody>{list.map(movement=>{const incoming=movement.transactionType==='RECEIVE'||movement.transactionType==='TRANSFER_IN',quantity=Number(movement.quantityIn||movement.quantityOut||0);return <tr key={movement.id}><td><b>{movement.transactionDate||'—'}</b><small>{movement.transactionTime||''}</small></td><td><span className={`movement-badge ${String(movement.transactionType||'').toLowerCase()}`}>{movementLabels[movement.transactionType]||movement.transactionType}</span></td><td><b>{movementActionText(movement)}</b></td><td>{movement.documentNo||'—'}</td><td>{movement.productCode||'—'}</td><td>{movement.productName||'—'}</td><td>{movement.warehouseGroup||'—'}<small>{movementLocation(movement)}</small></td><td>{movement.lotNo||'—'}</td><td className={incoming?'qty-in':'qty-out'}><b>{quantity?fmt(quantity):'—'}</b></td><td>{movement.userName||movement.createdBy||'—'}</td></tr>})}</tbody>
           </table>
           {!list.length&&<Empty/>}
         </div>
