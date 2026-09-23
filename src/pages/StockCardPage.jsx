@@ -40,7 +40,7 @@ const movementActionText = (movement) => {
 };
 
 export default function StockCardPage({ lotsOnly = false, embedded = false }) {
-  const { products, movements, lots, removeStockCardLots } = useApp(),
+  const { products, movements, lots, activePeriod, removeStockCardLots } = useApp(),
     [params,setParams] = useSearchParams();
   const mapLocationId = params.get("locationId") || "",
     mapLocation = params.get("location") || "",
@@ -48,6 +48,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     mapGroup = params.get("group") || "",
     mapType = params.get("type") || "",
     mapStatus = params.get("status") || "",
+    mapMonth = params.get("month") || activePeriod?.month || new Date().toISOString().slice(0,7),
     mapFrom = params.get("from") || "",
     mapTo = params.get("to") || "";
   const [product, setProduct] = useState(mapProduct),
@@ -55,6 +56,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     [lotSearch, setLotSearch] = useState(""),
     [group, setGroup] = useState(mapGroup),
     [type, setType] = useState(mapType),
+    [month, setMonth] = useState(mapMonth),
     [status, setStatus] = useState(mapStatus),
     [from, setFrom] = useState(mapFrom),
     [to, setTo] = useState(mapTo);
@@ -65,11 +67,12 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     setProductSearch(mapLocation);
     setGroup(mapGroup);
     setType(mapType);
+    setMonth(mapMonth);
     setStatus(mapStatus);
     setFrom(mapFrom);
     setTo(mapTo);
     setSelectedLots([]);
-  }, [mapLocation, mapProduct, mapGroup, mapType, mapStatus, mapFrom, mapTo]);
+  }, [mapLocation, mapProduct, mapGroup, mapType, mapStatus, mapMonth, mapFrom, mapTo]);
   const filteredProducts = useMemo(
     () =>
       products.filter((item) => {
@@ -122,6 +125,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
               .includes(productSearch.toLowerCase())) &&
           (!lotSearch || normalizeLotDate(movement.lotNo) === lotSearch) &&
           (!group || movement.warehouseGroup === group) &&
+          (!month || movement.periodMonth === month || String(movement.transactionDate || "").startsWith(month)) &&
           (!type ||
             (type === "TRANSFER"
               ? movement.transactionType.startsWith("TRANSFER_")
@@ -138,6 +142,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
       lotSearch,
       group,
       type,
+      month,
       status,
       from,
       to,
@@ -225,6 +230,7 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
     setLotSearch("");
     setGroup("");
     setType("");
+    setMonth(activePeriod?.month || new Date().toISOString().slice(0,7));
     setStatus("");
     setFrom("");
     setTo("");
@@ -310,19 +316,8 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
           </select>
         </label>
         {!lotsOnly && <label>
-          ประเภท
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value)}
-          >
-            <option value="">ทุกประเภท</option>
-            <option value="TRANSFER">โอนเข้าและโอนออก</option>
-            {Object.entries(movementLabels).filter(([key])=>stockCardMovementTypes.includes(key)).map(([key, label]) => (
-              <option value={key} key={key}>
-                {label}
-              </option>
-            ))}
-          </select>
+          เดือนที่ต้องการตรวจสอบ
+          <input type="month" value={month} onChange={(event)=>setMonth(event.target.value)}/>
         </label>}
         <label>
           สถานะสินค้า
@@ -393,6 +388,12 @@ export default function StockCardPage({ lotsOnly = false, embedded = false }) {
           color="purple"
           onClick={() => setType("TRANSFER")}
         />
+      </div>
+      <div className="report-tabs stock-card-tabs" aria-label="แยกประเภทรายการ Stock Card">
+        <button className={!type?'active':''} onClick={()=>setType('')}>ทั้งหมด</button>
+        <button className={type==='RECEIVE'?'active':''} onClick={()=>setType('RECEIVE')}>รับเข้า</button>
+        <button className={type==='ISSUE'?'active':''} onClick={()=>setType('ISSUE')}>จ่ายออก</button>
+        <button className={type==='TRANSFER'?'active':''} onClick={()=>setType('TRANSFER')}>โอนระหว่างคลัง</button>
       </div>
       <div className="card stock-movement-card">
         <div className="card-title">
