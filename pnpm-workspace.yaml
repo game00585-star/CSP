@@ -3,5 +3,5 @@ packages:
 
 allowBuilds:
   esbuild: true
-onlyBuiltDependencies:
-  - esbuild
+  '@firebase/util': true
+  protobufjs: true
