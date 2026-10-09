@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Warehouse,Scale,Tags,TableProperties,Hash,DatabaseBackup,RotateCcw,Save,Users,Download,ExternalLink} from 'lucide-react';
+import {Warehouse,Scale,Tags,TableProperties,Hash,DatabaseBackup,RotateCcw,Save,Users,Download} from 'lucide-react';
 import {useApp} from '../context/AppContext';
 import {warehouseGroups,units} from '../data/constants';
 import {PageHeader,ConfirmModal} from '../components/common';
@@ -17,8 +17,8 @@ export default function SettingsPage(){
     {tab===2&&<div className="setting-list">{['ส่งให้สาขา','เบิกใช้งาน','คืน Supplier','สินค้าเสียหาย','ปรับปรุง Stock'].map((name,index)=><div key={name}><span className="order">{index+1}</span><b>{name}</b><span className="badge green">ใช้งาน</span></div>)}</div>}
     {tab===3&&<div className="form-grid"><label>จำนวนรายการต่อหน้า<select><option>10</option><option>20</option><option>50</option></select></label><label>ความหนาแน่นตาราง<select><option>ปกติ</option><option>กระชับ</option></select></label></div>}
     {tab===4&&<div className="form-grid"><label>รับสินค้า<input value="RCV" readOnly/></label><label>จ่ายสินค้า<input value="ISS" readOnly/></label><label>โอนสินค้า<input value="TRF" readOnly/></label><label>รูปแบบวันที่<input value="YYYYMMDD" readOnly/></label></div>}
-    {tab===5&&<div className="backup-box"><Users/><h3>จัดการผู้ใช้ด้วย Firebase Authentication</h3><p>เพิ่ม ลบ ปิดบัญชี หรือเปลี่ยนรหัสผ่านจาก Firebase Console เพื่อให้บัญชีผู้ใช้ปลอดภัยและใช้ร่วมกันทุกอุปกรณ์</p><button className="btn primary" onClick={()=>window.open('https://console.firebase.google.com/project/cspf-4189a/authentication/users','_blank','noopener,noreferrer')}><ExternalLink/> เปิด Firebase Users</button></div>}
-    {tab===6&&<div className="backup-box"><DatabaseBackup/><h3>สำรองข้อมูลปัจจุบันเป็น JSON</h3><p>ข้อมูลหลักบันทึก Real-time อยู่บน Cloud Firestore ไฟล์นี้ใช้สำหรับดาวน์โหลดสำเนาเพื่อตรวจสอบเท่านั้น</p><div className="actions backup-actions"><button className="btn primary" onClick={exportBackup}><Download/> ดาวน์โหลด Backup</button><button className="btn danger-btn" onClick={()=>setConfirm(true)}><RotateCcw/> ล้างข้อมูลทดสอบ</button></div></div>}
+    {tab===5&&<div className="backup-box"><Users/><h3>ผู้ดูแลระบบเดิม</h3><p>เข้าสู่ระบบด้วยชื่อผู้ใช้ admin และรหัสผ่านเดิมของระบบ ข้อมูลทำงานภายในเบราว์เซอร์นี้</p></div>}
+    {tab===6&&<div className="backup-box"><DatabaseBackup/><h3>สำรองข้อมูลปัจจุบันเป็น JSON</h3><p>ข้อมูลหลักบันทึกอยู่ในเบราว์เซอร์นี้ ดาวน์โหลดไฟล์สำรองไว้ก่อนคืนค่าข้อมูลเดิมหรือย้ายเครื่อง</p><div className="actions backup-actions"><button className="btn primary" onClick={exportBackup}><Download/> ดาวน์โหลด Backup</button><button className="btn danger-btn" onClick={()=>setConfirm(true)}><RotateCcw/> คืนค่าข้อมูลเดิม</button></div></div>}
     {tab<5&&<button className="btn primary settings-save" onClick={()=>setToast('บันทึกการตั้งค่าแล้ว')}><Save/> บันทึกการตั้งค่า</button>}
-  </div></div>{confirm&&<ConfirmModal title="ล้างข้อมูลทดสอบ" text="สินค้า รายการเคลื่อนไหว Lot เอกสาร และรอบคลังบน Firebase จะถูกล้างทั้งหมด ต้องการดำเนินการหรือไม่" onClose={()=>setConfirm(false)} onConfirm={()=>{reset();setConfirm(false)}}/>}</>;
+  </div></div>{confirm&&<ConfirmModal title="คืนค่าข้อมูลเดิม" text="ข้อมูลที่แก้ไขในเบราว์เซอร์นี้จะถูกแทนที่ด้วยข้อมูลเริ่มต้นเดิม ต้องการดำเนินการหรือไม่" onClose={()=>setConfirm(false)} onConfirm={()=>{reset();setConfirm(false)}}/>}</>;
 }
