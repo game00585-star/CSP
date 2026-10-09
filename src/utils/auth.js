@@ -1,93 +1,31 @@
-const USERS_KEY = "csp_users";
-const AUTH_KEY = "csp_auth";
+import {browserLocalPersistence,browserSessionPersistence,setPersistence,signInWithEmailAndPassword,signOut} from 'firebase/auth';
+import {auth,firebaseConfigured} from '../services/firebase';
 
-const encodePassword = (password) => {
-  const text = String(password || "");
-  let hash = 2166136261;
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(36);
+const AUTH_KEY='csp_auth';
+
+export const authenticate=async(email,password,remember=true)=>{
+  if(!firebaseConfigured||!auth)throw new Error('ยังไม่ได้ตั้งค่า Firebase Environment Variables');
+  await setPersistence(auth,remember?browserLocalPersistence:browserSessionPersistence);
+  const credential=await signInWithEmailAndPassword(auth,String(email).trim(),password);
+  return{id:credential.user.uid,userId:credential.user.uid,username:credential.user.email,email:credential.user.email,name:credential.user.displayName||credential.user.email?.split('@')[0]||'ผู้ใช้งาน',role:'APPROVER',roleLabel:'Admin'};
 };
 
-const defaultUsers = [
-  {
-    id: "USR-ADMIN",
-    username: "admin",
-    passwordHash: encodePassword("1234"),
-    name: "ผู้ดูแลระบบ",
-    role: "APPROVER",
-    roleLabel: "Admin",
-    active: true,
-  },
-];
-
-export const getUsers = () => {
-  try {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY));
-    if (Array.isArray(users) && users.length) return users;
-  } catch {
-    // Use the initial administrator account when stored data is invalid.
-  }
-  localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
-  return defaultUsers;
+export const getAuthSession=()=>{
+  try{return JSON.parse(localStorage.getItem(AUTH_KEY)||sessionStorage.getItem(AUTH_KEY))||null}catch{return null}
 };
 
-export const saveUsers = (users) =>
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-
-export const authenticate = (username, password) =>
-  getUsers().find(
-    (user) =>
-      user.active !== false &&
-      user.username.toLowerCase() === String(username).trim().toLowerCase() &&
-      user.passwordHash === encodePassword(password),
-  );
-
-export const createPasswordHash = encodePassword;
-
-export const getAuthSession = () => {
-  try {
-    const session = JSON.parse(
-      localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY),
-    );
-    if (!session) return null;
-    if (session.userId && session.name && session.role) return session;
-    const legacyUsername = session.username || session.user;
-    const user = getUsers().find((item) => item.username === legacyUsername);
-    if (!user) return null;
-    const migrated = {
-      userId: user.id,
-      username: user.username,
-      name: user.name,
-      role: user.role,
-      roleLabel: user.roleLabel,
-    };
-    localStorage.setItem(AUTH_KEY, JSON.stringify(migrated));
-    return migrated;
-  } catch {
-    return null;
-  }
+export const setAuthSession=(user,remember=true)=>{
+  const session={userId:user.userId||user.id,username:user.username||user.email,email:user.email||user.username,name:user.name,role:user.role||'APPROVER',roleLabel:user.roleLabel||'Admin'};
+  localStorage.removeItem(AUTH_KEY);sessionStorage.removeItem(AUTH_KEY);
+  (remember?localStorage:sessionStorage).setItem(AUTH_KEY,JSON.stringify(session));
 };
 
-export const setAuthSession = (user, remember) => {
-  const session = {
-    userId: user.id,
-    username: user.username,
-    name: user.name,
-    role: user.role,
-    roleLabel: user.roleLabel,
-  };
-  localStorage.removeItem(AUTH_KEY);
-  sessionStorage.removeItem(AUTH_KEY);
-  (remember ? localStorage : sessionStorage).setItem(
-    AUTH_KEY,
-    JSON.stringify(session),
-  );
+export const clearAuthSession=async()=>{
+  localStorage.removeItem(AUTH_KEY);sessionStorage.removeItem(AUTH_KEY);
+  if(auth)await signOut(auth).catch(()=>{});
 };
 
-export const clearAuthSession = () => {
-  localStorage.removeItem(AUTH_KEY);
-  sessionStorage.removeItem(AUTH_KEY);
-};
+// User administration is handled by Firebase Authentication Console.
+export const getUsers=()=>[];
+export const saveUsers=()=>{};
+export const createPasswordHash=value=>String(value||'');

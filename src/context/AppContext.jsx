@@ -1,26 +1,58 @@
 import {createContext,useContext,useEffect,useRef,useState} from 'react';
-import {initialProducts,initialMovements} from '../data/mockData';
-import {pkInCatalogProducts,pkInCatalogVersion} from '../data/pkInCatalog';
+import {doc,onSnapshot,setDoc} from 'firebase/firestore';
+import {onAuthStateChanged} from 'firebase/auth';
 import {convertQuantity,localDateKey,unitsCompatible} from '../utils/helpers';
 import {getAuthSession} from '../utils/auth';
 import {finiteNumber,latestCountLines,nextMonthKey,projectCountLine} from '../utils/inventoryLogic';
-const AppContext=createContext(null); const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}};
+import {auth,db} from '../services/firebase';
+const AppContext=createContext(null);
 const uniqueId=prefix=>`${prefix}-${globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 const isIpAddress=value=>/^(?:\d{1,3}\.){3}\d{1,3}$/.test(String(value||''))||String(value||'').includes(':');
 const clientIp=()=>{const value=sessionStorage.getItem('csp_client_ip');return isIpAddress(value)?value:'ไม่สามารถระบุ IP'};
 const transactionLocks=new Set();
 const resolveClientIp=async()=>{for(const url of ['https://api64.ipify.org?format=json','https://api.ipify.org?format=json']){try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)continue;const value=(await response.json()).ip;if(isIpAddress(value)){sessionStorage.setItem('csp_client_ip',value);return value}}catch{/* ลองบริการสำรอง */}}sessionStorage.removeItem('csp_client_ip');return''};
-const identity=item=>`${item.warehouseGroup}|${item.productCode}|${item.productName}|${item.barcode}`.toLowerCase();
-const catalogIdentity=item=>`${item.warehouseGroup}|${String(item.productCode||'').trim()}|${String(item.productName||'').trim()}`.toLowerCase();
-const catalogSourceIdentity=item=>item.sourceFile&&item.sourceRow?`${String(item.sourceFile).toLowerCase()}|${item.sourceRow}`:'';
-const syncPkInCatalog=storedProducts=>{const existingByKey=new Map(storedProducts.map(product=>[catalogIdentity(product),product])),existingBySource=new Map(storedProducts.filter(product=>catalogSourceIdentity(product)).map(product=>[catalogSourceIdentity(product),product])),catalogKeys=new Set(pkInCatalogProducts.map(catalogIdentity)),matchedIds=new Set();const imported=pkInCatalogProducts.map(catalog=>{const existing=existingBySource.get(catalogSourceIdentity(catalog))||existingByKey.get(catalogIdentity(catalog));if(existing)matchedIds.add(existing.id);return existing?{...catalog,...existing,id:existing.id,currentStock:existing.currentStock,createdAt:existing.createdAt||catalog.createdAt}:{...catalog}});const retained=storedProducts.filter(product=>{if(matchedIds.has(product.id))return false;if(!['PK','IN'].includes(product.warehouseGroup))return true;if(catalogKeys.has(catalogIdentity(product)))return false;return !/^(PK|IN)-\d{3}$/i.test(String(product.productCode||'').trim())});localStorage.setItem('csp_pk_in_catalog_version',pkInCatalogVersion);return[...imported,...retained]};
-const loadSnapshot=()=>{const storedProducts=syncPkInCatalog(read('csp_products',initialProducts)),storedMovements=read('csp_movements',initialMovements),seen=new Set(),productByKey=new Map();const products=storedProducts.map(product=>{const id=!product.id||seen.has(product.id)?uniqueId('PRD'):product.id;seen.add(id);const normalized={...product,id};productByKey.set(identity(normalized),id);return normalized});const validIds=new Set(products.map(product=>product.id));const movements=storedMovements.map(movement=>({...movement,id:movement.id||uniqueId('MOV'),productId:validIds.has(movement.productId)?movement.productId:(productByKey.get(identity(movement))||movement.productId)}));return{products,movements}};
-const openingLots=products=>products.filter(product=>product.currentStock>0).map(product=>({id:uniqueId('LOT'),productId:product.id,productCode:product.productCode,productName:product.productName,barcode:product.barcode,warehouseGroup:product.warehouseGroup,lotNo:'ยอดเดิม',receivedDate:(product.createdAt||new Date().toISOString()).slice(0,10),quantityReceived:product.currentStock,quantityRemaining:product.currentStock,createdAt:product.createdAt||new Date().toISOString()}));
+const loadSnapshot=()=>({products:[],movements:[]});
 const defaultLocations=['PK','IN','RM','FG-CUT','FG-PACK'].flatMap(group=>Array.from({length:6},(_,index)=>({id:`LOC-${group}-${index+1}`,warehouseGroup:group,name:`${group}-${String(index+1).padStart(2,'0')}`,capacity:50,unit:group==='PK'?'ตัน':'กิโลกรัม',row:Math.floor(index/3),column:index%3,active:true})));
-export function AppProvider({children}){const [snapshot]=useState(loadSnapshot);const [products,setProducts]=useState(snapshot.products);const [movements,setMovements]=useState(snapshot.movements);const [lots,setLots]=useState(()=>read('csp_lots',null)||openingLots(snapshot.products));const [documents,setDocuments]=useState(()=>read('csp_documents',[]));const [auditLogs,setAuditLogs]=useState(()=>read('csp_audit_logs',[]));const [stockCounts,setStockCounts]=useState(()=>read('csp_stock_counts',[]));const [storageLocations,setStorageLocations]=useState(()=>read('csp_storage_locations',defaultLocations));const [warehousePeriods,setWarehousePeriods]=useState(()=>read('csp_warehouse_periods',[]));const [viewingPeriodId,setViewingPeriodId]=useState(()=>read('csp_viewing_period',''));const [openingClosures,setOpeningClosures]=useState(()=>read('csp_opening_closures',[]));const [toast,setToast]=useState('');const currentUser=getAuthSession()||{name:'ผู้ดูแลระบบ',role:'APPROVER',roleLabel:'ผู้อนุมัติ'};
-const locationMigrationDone=useRef(false);
+export function AppProvider({children}){const [snapshot]=useState(loadSnapshot);const [products,setProducts]=useState(snapshot.products);const [movements,setMovements]=useState(snapshot.movements);const [lots,setLots]=useState([]);const [documents,setDocuments]=useState([]);const [auditLogs,setAuditLogs]=useState([]);const [stockCounts,setStockCounts]=useState([]);const [storageLocations,setStorageLocations]=useState(defaultLocations);const [warehousePeriods,setWarehousePeriods]=useState([]);const [viewingPeriodId,setViewingPeriodId]=useState('');const [openingClosures,setOpeningClosures]=useState([]);const [toast,setToast]=useState('');const [syncStatus,setSyncStatus]=useState('กำลังเชื่อมต่อ Firebase');const currentUser=getAuthSession()||{name:'ผู้ดูแลระบบ',role:'APPROVER',roleLabel:'ผู้อนุมัติ'};
+const locationMigrationDone=useRef(false),firestoreReady=useRef(false),applyingRemote=useRef(false);
 useEffect(()=>localStorage.setItem('csp_products',JSON.stringify(products)),[products]);useEffect(()=>localStorage.setItem('csp_movements',JSON.stringify(movements)),[movements]);useEffect(()=>localStorage.setItem('csp_lots',JSON.stringify(lots)),[lots]);useEffect(()=>localStorage.setItem('csp_documents',JSON.stringify(documents)),[documents]);useEffect(()=>localStorage.setItem('csp_audit_logs',JSON.stringify(auditLogs)),[auditLogs]);useEffect(()=>localStorage.setItem('csp_stock_counts',JSON.stringify(stockCounts)),[stockCounts]);useEffect(()=>localStorage.setItem('csp_storage_locations',JSON.stringify(storageLocations)),[storageLocations]);useEffect(()=>localStorage.setItem('csp_warehouse_periods',JSON.stringify(warehousePeriods)),[warehousePeriods]);useEffect(()=>localStorage.setItem('csp_viewing_period',JSON.stringify(viewingPeriodId)),[viewingPeriodId]);useEffect(()=>localStorage.setItem('csp_opening_closures',JSON.stringify(openingClosures)),[openingClosures]);useEffect(()=>{if(locationMigrationDone.current)return;locationMigrationDone.current=true;setLots(current=>{if(!current.some(lot=>!lot.locationId&&lot.locationName!=='ยังไม่ระบุจุดจัดเก็บ'))return current;return current.map(lot=>{if(lot.locationId||lot.locationName==='ยังไม่ระบุจุดจัดเก็บ')return lot;const location=storageLocations.find(item=>item.warehouseGroup===lot.warehouseGroup);return location?{...lot,locationId:location.id,locationName:location.name}:lot})})},[storageLocations]);useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),3000);return()=>clearTimeout(t)},[toast]);
 useEffect(()=>{resolveClientIp()},[]);
+useEffect(()=>{
+  if(!auth||!db){setSyncStatus('ยังไม่ได้ตั้งค่า Firebase');return undefined}
+  let stopSnapshot=()=>{};
+  const stateRef=doc(db,'csp_state','main');
+  const stopAuth=onAuthStateChanged(auth,user=>{
+    stopSnapshot();firestoreReady.current=false;
+    if(!user){setSyncStatus('รอเข้าสู่ระบบ');return}
+    setSyncStatus('กำลังโหลดข้อมูลจาก Firebase');
+    stopSnapshot=onSnapshot(stateRef,snapshotDoc=>{
+      if(snapshotDoc.exists()){
+        const remote=snapshotDoc.data();applyingRemote.current=true;
+        setProducts(Array.isArray(remote.products)?remote.products:[]);
+        setMovements(Array.isArray(remote.movements)?remote.movements:[]);
+        setLots(Array.isArray(remote.lots)?remote.lots:[]);
+        setDocuments(Array.isArray(remote.documents)?remote.documents:[]);
+        setAuditLogs(Array.isArray(remote.auditLogs)?remote.auditLogs:[]);
+        setStockCounts(Array.isArray(remote.stockCounts)?remote.stockCounts:[]);
+        setStorageLocations(Array.isArray(remote.storageLocations)&&remote.storageLocations.length?remote.storageLocations:defaultLocations);
+        setWarehousePeriods(Array.isArray(remote.warehousePeriods)?remote.warehousePeriods:[]);
+        setViewingPeriodId(remote.viewingPeriodId||'');
+        setOpeningClosures(Array.isArray(remote.openingClosures)?remote.openingClosures:[]);
+        setTimeout(()=>{applyingRemote.current=false},0);
+      }else{
+        setDoc(stateRef,{products:[],movements:[],lots:[],documents:[],auditLogs:[],stockCounts:[],storageLocations:defaultLocations,warehousePeriods:[],viewingPeriodId:'',openingClosures:[],updatedAt:new Date().toISOString(),updatedBy:user.uid});
+      }
+      firestoreReady.current=true;setSyncStatus('เชื่อมต่อ Firebase แล้ว');
+    },error=>{console.error('Firestore sync failed',error);setSyncStatus('เชื่อมต่อ Firebase ไม่สำเร็จ')});
+  });
+  return()=>{stopSnapshot();stopAuth()};
+},[]);
+useEffect(()=>{
+  if(!db||!auth?.currentUser||!firestoreReady.current||applyingRemote.current)return undefined;
+  setSyncStatus('กำลังบันทึก...');
+  const timer=setTimeout(()=>setDoc(doc(db,'csp_state','main'),{products,movements,lots,documents,auditLogs,stockCounts,storageLocations,warehousePeriods,viewingPeriodId,openingClosures,updatedAt:new Date().toISOString(),updatedBy:auth.currentUser.uid}).then(()=>setSyncStatus('บันทึกบน Firebase แล้ว')).catch(error=>{console.error('Firestore save failed',error);setSyncStatus('บันทึก Firebase ไม่สำเร็จ')}),450);
+  return()=>clearTimeout(timer);
+},[products,movements,lots,documents,auditLogs,stockCounts,storageLocations,warehousePeriods,viewingPeriodId,openingClosures]);
 const activePeriod=warehousePeriods.find(period=>period.status==='OPEN')||null;
 const viewingPeriod=warehousePeriods.find(period=>period.id===viewingPeriodId&&period.status==='CLOSED')||null;
 const assertOpenPeriod=date=>{const month=String(date||new Date().toISOString().slice(0,10)).slice(0,7);if(!activePeriod)throw new Error('ยังไม่ได้เปิดรอบเดือนคลัง กรุณาสร้างรอบเดือนก่อนทำรายการ');if(activePeriod.month!==month)throw new Error(`วันที่รายการต้องอยู่ในรอบเดือน ${activePeriod.month}`);return activePeriod};
@@ -154,6 +186,6 @@ const reopenOpeningBalance=id=>{const closure=openingClosures.find(item=>item.id
 const saveStorageLocation=data=>{setStorageLocations(current=>data.id?current.map(item=>item.id===data.id?{...item,...data,capacity:+data.capacity}:item):[...current,{...data,id:uniqueId('LOC'),capacity:+data.capacity,active:true}]);setToast(data.id?'บันทึกจุดเก็บแล้ว':'เพิ่มช่องในแผนที่แล้ว')};
 const reorderStorageLocations=(sourceId,targetId)=>{if(!sourceId||!targetId||sourceId===targetId)return;setStorageLocations(current=>{const sourceIndex=current.findIndex(item=>item.id===sourceId),targetIndex=current.findIndex(item=>item.id===targetId);if(sourceIndex<0||targetIndex<0)return current;const next=[...current],[moved]=next.splice(sourceIndex,1);next.splice(targetIndex,0,moved);return next});setToast('บันทึกตำแหน่งบนแผนที่แล้ว')};
 const removeStorageLocation=id=>{if(lots.some(lot=>lot.locationId===id&&lot.quantityRemaining>0))throw new Error('ลบไม่ได้ จุดเก็บนี้ยังมีสินค้าคงเหลือ');setStorageLocations(current=>current.filter(item=>item.id!==id));setToast('ลบจุดเก็บแล้ว')};
-const reset=()=>{setProducts(initialProducts);setMovements(initialMovements);setLots(openingLots(initialProducts));setDocuments([]);setAuditLogs([]);setStockCounts([]);setStorageLocations(defaultLocations);setWarehousePeriods([]);setViewingPeriodId('');setOpeningClosures([]);setToast('คืนค่าข้อมูลตัวอย่างแล้ว')};return <AppContext.Provider value={{products,movements,lots,documents,auditLogs,stockCounts,storageLocations,warehousePeriods,openingClosures,activePeriod,viewingPeriod,currentUser,toast,setToast,addProduct,updateProduct,assignProductLocation,unassignProductLocation,removeProduct,removeStockCardLots,receive,issue,transfer,postWarehouseTransaction,createStockCount,finishStockCount,deleteStockCount,adjustStock,addDocument,requestMovementChange,requestOpeningBalanceAdjustment,approveChange,rejectChange,finalizeOpeningBalance,reopenOpeningBalance,saveStorageLocation,reorderStorageLocations,removeStorageLocation,createWarehousePeriod,closeWarehousePeriod,removeWarehousePeriod,viewWarehousePeriod,assertOpenPeriod,reset}}>{children}</AppContext.Provider>};
+const reset=()=>{setProducts([]);setMovements([]);setLots([]);setDocuments([]);setAuditLogs([]);setStockCounts([]);setStorageLocations(defaultLocations);setWarehousePeriods([]);setViewingPeriodId('');setOpeningClosures([]);setToast('ล้างข้อมูลระบบทดสอบแล้ว')};return <AppContext.Provider value={{products,movements,lots,documents,auditLogs,stockCounts,storageLocations,warehousePeriods,openingClosures,activePeriod,viewingPeriod,currentUser,toast,syncStatus,setToast,addProduct,updateProduct,assignProductLocation,unassignProductLocation,removeProduct,removeStockCardLots,receive,issue,transfer,postWarehouseTransaction,createStockCount,finishStockCount,deleteStockCount,adjustStock,addDocument,requestMovementChange,requestOpeningBalanceAdjustment,approveChange,rejectChange,finalizeOpeningBalance,reopenOpeningBalance,saveStorageLocation,reorderStorageLocations,removeStorageLocation,createWarehousePeriod,closeWarehousePeriod,removeWarehousePeriod,viewWarehousePeriod,assertOpenPeriod,reset}}>{children}</AppContext.Provider>};
 // eslint-disable-next-line react-refresh/only-export-components
 export const useApp=()=>useContext(AppContext);

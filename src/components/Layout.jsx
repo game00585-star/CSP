@@ -15,7 +15,7 @@ export default function Layout(){
   useEffect(()=>{if(locked&&loc.pathname!=='/warehouse-periods')nav('/warehouse-periods',{replace:true})},[locked,loc.pathname,nav]);
   useEffect(()=>{document.documentElement.classList.toggle('dark-theme',dark);localStorage.setItem('csp_dark_mode',String(dark))},[dark]);
   useEffect(()=>{localStorage.setItem('csp_sidebar_collapsed',String(collapsed))},[collapsed]);
-  const logout=()=>{clearAuthSession();nav('/login')},title=titles[loc.pathname.split('/')[1]]||'CSP Warehouse';
+  const logout=async()=>{await clearAuthSession();nav('/login')},title=titles[loc.pathname.split('/')[1]]||'CSP Warehouse';
   const visibleMenu=locked?menu.filter(([to])=>to==='/warehouse-periods'):menu;
   return <div className="app-shell"><AutoTablePagination/>
     <aside className={`sidebar ${collapsed?'collapsed':''} ${mobile?'mobile-open':''}`}>
