@@ -1,0 +1,31 @@
+.csp-ambient-background{
+  position:fixed;
+  z-index:0;
+  inset:0;
+  overflow:hidden;
+  background:#06142f;
+  pointer-events:none;
+}
+.csp-ambient-background canvas{width:100%!important;height:100%!important}
+.csp-ambient-scrim{position:absolute;inset:0;background:rgba(3,10,28,.48)}
+.csp-app-content{position:relative;z-index:1;min-height:100vh;isolation:isolate}
+.csp-app-content .app-shell{background:transparent!important}
+.csp-app-content .main-wrap{background:rgba(243,245,251,.88)!important;backdrop-filter:blur(12px)}
+.csp-app-content .main-wrap>main{background:transparent!important}
+.csp-app-content .main-wrap>header{background:rgba(250,251,255,.82)!important;backdrop-filter:blur(18px)}
+.csp-app-content .main-wrap>footer{background:rgba(243,245,251,.72)!important}
+html.dark-theme .csp-app-content .main-wrap{background:rgba(6,14,31,.84)!important}
+html.dark-theme .csp-app-content .main-wrap>header{background:rgba(8,18,39,.82)!important}
+html.dark-theme .csp-app-content .main-wrap>footer{background:rgba(6,14,31,.76)!important}
+.csp-app-content .login-page{background:transparent!important}
+.csp-app-content .login-form-wrap{background:rgba(5,13,30,.82)!important;backdrop-filter:blur(18px)}
+.csp-app-content .login-form-wrap::before{border-color:rgba(255,210,10,.12)}
+
+@media(max-width:760px){
+  .csp-ambient-scrim{background:rgba(3,10,28,.58)}
+  .csp-app-content .main-wrap{backdrop-filter:blur(8px)}
+  .csp-app-content .login-form-wrap{background:rgba(5,13,30,.9)!important;backdrop-filter:blur(10px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .csp-ambient-background{opacity:.92}
+}
