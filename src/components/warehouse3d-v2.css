@@ -21,8 +21,15 @@
 
 /* Camera framing tuned against the supplied 1366px and mobile references. */
 .warehouse-3d:not(.warehouse-3d-compact){height:clamp(470px,36vw,560px)}
+.warehouse-photo-stage{position:absolute;z-index:1;inset:-4%;background:url('../assets/csp-dashboard-warehouse-v2.png') center/cover no-repeat;transform-origin:66% 55%;transition:transform .22s ease-out;will-change:transform}
+.warehouse-photo-stage::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,16,39,.5),transparent 34%),linear-gradient(0deg,rgba(6,14,35,.2),transparent 30%);pointer-events:none}
+.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{display:none}
+.warehouse-hotspots{position:absolute;z-index:6;inset:0;pointer-events:none}
+.warehouse-hotspots button{position:absolute;left:calc(42% + var(--hotspot)*10.5%);top:calc(34% + (var(--hotspot)%2)*4%);display:flex;align-items:center;justify-content:center;flex-direction:column;min-width:76px;padding:9px 10px;border:1px solid rgba(100,190,255,.72);border-radius:12px;color:#fff;background:linear-gradient(160deg,rgba(8,20,55,.96),rgba(15,35,81,.9));box-shadow:0 10px 26px rgba(0,0,0,.34),0 0 18px rgba(59,130,246,.18),inset 0 1px rgba(255,255,255,.12);transform:translate(-50%,-50%);transition:.18s;pointer-events:auto}
+.warehouse-hotspots button:hover,.warehouse-hotspots button.selected{border-color:#facc00;transform:translate(-50%,-56%) scale(1.06);box-shadow:0 14px 30px rgba(0,0,0,.4),0 0 22px rgba(250,204,0,.24)}
+.warehouse-hotspots button.muted{opacity:.32}.warehouse-hotspots span{font-size:11px;font-weight:800}.warehouse-hotspots b{color:#facc00;font-size:20px;line-height:1.05}.warehouse-hotspots small{color:#9fb0ce;font-size:8px}
 .warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:66%;top:54%}
 .warehouse-3d-compact .warehouse-3d-world{left:61%;top:67%}
 .warehouse-3d-compact .warehouse-building,.warehouse-3d-compact .warehouse-rack,.warehouse-3d-compact .warehouse-loader,.warehouse-3d-compact .warehouse-floor{filter:drop-shadow(0 12px 20px rgba(2,8,23,.38))}
 @media(max-width:1366px) and (min-width:781px){.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:68%;top:55%}.warehouse-command-panel{width:218px}}
-@media(max-width:700px){.warehouse-3d:not(.warehouse-3d-compact){height:auto;min-height:540px}.warehouse-command-panel{top:auto;bottom:52px;grid-template-columns:repeat(3,minmax(0,1fr));background:linear-gradient(180deg,rgba(7,18,46,.88),rgba(7,18,46,.98))}.warehouse-command-panel>span,.warehouse-command-panel h2,.warehouse-command-panel>p{display:none}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:66%;top:34%}.warehouse-3d-toolbar{top:12px}.warehouse-3d-legend{display:none}}
+@media(max-width:700px){.warehouse-3d:not(.warehouse-3d-compact){height:auto;min-height:540px}.warehouse-command-panel{top:auto;bottom:52px;grid-template-columns:repeat(3,minmax(0,1fr));background:linear-gradient(180deg,rgba(7,18,46,.88),rgba(7,18,46,.98))}.warehouse-command-panel>span,.warehouse-command-panel h2,.warehouse-command-panel>p{display:none}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:66%;top:34%}.warehouse-photo-stage{inset:0 0 42%;background-position:64% center}.warehouse-hotspots{display:none}.warehouse-3d-toolbar{top:12px}.warehouse-3d-legend{display:none}}

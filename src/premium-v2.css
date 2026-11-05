@@ -8,9 +8,10 @@ body{font-variant-numeric:tabular-nums}
 .page-header h1{letter-spacing:-.025em}.card,.stat-card,.filter-bar{border-color:var(--csp-line)}
 .table-wrap table{font-variant-numeric:tabular-nums}
 .login-page{background:var(--csp-navy)}
-.login-visual{position:relative;display:block;min-width:0;overflow:hidden;background:radial-gradient(circle at 75% 16%,rgba(250,204,0,.34),transparent 35%),linear-gradient(135deg,#06122f 0%,#102f65 54%,#dba900 54.2%,#ffdb22 100%)}
-.login-visual::after{content:"";position:absolute;z-index:3;inset:0;background:linear-gradient(180deg,rgba(3,11,31,.02),rgba(3,11,31,.18) 62%,rgba(3,11,31,.72));pointer-events:none}
+.login-visual{position:relative;display:block;min-width:0;overflow:hidden;background:#07152f url('./assets/csp-login-warehouse-v2.png') center/cover no-repeat}
+.login-visual::after{content:"";position:absolute;z-index:3;inset:0;background:linear-gradient(90deg,rgba(3,11,31,.7),rgba(3,11,31,.14) 58%,rgba(3,11,31,.12)),linear-gradient(180deg,rgba(3,11,31,.04),transparent 48%,rgba(3,11,31,.16));pointer-events:none}
 .login-visual .visual-content{position:absolute;z-index:7;left:7%;right:8%;top:7%;max-width:580px;pointer-events:none}
+.login-visual .warehouse-3d-compact{display:none}
 .login-visual .visual-content h1{max-width:570px;font-size:clamp(42px,4.6vw,66px);line-height:1.06;letter-spacing:-.045em;text-wrap:balance}
 .login-visual .visual-content>p:not(.eyebrow){max-width:500px}.visual-stats{max-width:410px}
 .login-form-wrap{position:relative;z-index:12;background:radial-gradient(circle at 60% 25%,rgba(35,70,145,.18),transparent 40%),#080f22}
@@ -31,6 +32,7 @@ body{font-variant-numeric:tabular-nums}
 .login-visual .visual-content>p:not(.eyebrow){color:rgba(255,255,255,.84)!important}
 .login-visual .visual-stats b{color:#fff}.login-visual .visual-stats span{color:rgba(255,255,255,.68)}
 .login-visual .visual-logo{color:#10162d;background:linear-gradient(145deg,#ffe44b,#f5bd00);box-shadow:0 12px 30px rgba(250,204,0,.28)}
+.visual-brand{display:flex;align-items:center;gap:12px;margin-bottom:24px}.visual-brand>div:last-child b,.visual-brand>div:last-child span{display:block}.visual-brand>div:last-child b{font-size:31px;line-height:.92;letter-spacing:.03em}.visual-brand>div:last-child span{margin-top:5px;font-size:12px;color:rgba(255,255,255,.78)}
 .login-form-wrap{min-width:430px}.login-card{max-width:470px}
 .login-mobile-brand{display:none}
 .mobile-bottom-nav{display:none}

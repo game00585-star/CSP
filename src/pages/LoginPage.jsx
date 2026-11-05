@@ -14,7 +14,7 @@ export default function LoginPage(){
     <section className="login-visual">
       <Warehouse3D compact/>
       <div className="visual-content">
-        <div className="visual-logo"><Warehouse/></div><p className="eyebrow">CSP WAREHOUSE OPERATIONS</p>
+        <div className="visual-brand"><div className="visual-logo"><Warehouse/></div><div><b>CSP</b><span>Foods Supply</span></div></div><p className="eyebrow">CSP WAREHOUSE OPERATIONS</p>
         <h1>คลังที่เคลื่อนไหว<br/>อย่างเป็นระบบ</h1><p>จัดการสินค้า รับเข้า จ่ายออก และโอนคลังอย่างแม่นยำในพื้นที่ทำงานเดียว</p>
         <div className="visual-stats"><div><b>{warehouseGroups.length}</b><span>กลุ่มคลัง</span></div><div><b>Stock Card</b><span>ติดตามการเคลื่อนไหว</span></div></div>
       </div>

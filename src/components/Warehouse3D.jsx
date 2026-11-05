@@ -28,6 +28,8 @@ export default function Warehouse3D({products=[],compact=false,onSelect}){
       <button type="button" onClick={reset} aria-label="คืนค่ามุมมอง"><RotateCcw/></button>
     </div>
     <div className="warehouse-3d-viewport" onPointerDown={start} onPointerMove={move} onPointerUp={stop} onPointerCancel={stop} onWheel={event=>setZoom(value=>clamp(value-event.deltaY*.0008,.72,1.6))}>
+      {!compact&&<div className="warehouse-photo-stage" style={{transform:`scale(${.82+zoom*.14}) translate3d(${rotation.y*.12}px,${rotation.x*.08}px,0)`}}/>}
+      {!compact&&<div className="warehouse-hotspots">{groups.map((group,index)=><button type="button" key={group.id} className={`${selected!=='all'&&selected!==group.id?'muted':''} ${selected===group.id?'selected':''}`} style={{'--hotspot':index}} onClick={event=>{event.stopPropagation();choose(group)}}><span>{group.name}</span><b>{group.count.toLocaleString('th-TH')}</b><small>รายการ</small></button>)}</div>}
       <div className="warehouse-3d-world" style={{transform:`translate(-50%,-50%) scale(${zoom}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`}}>
         <div className="warehouse-floor"><i/><i/><i/><i/><i/></div>
         <div className="warehouse-building"><span className="building-front"><Warehouse/><b>CSP</b></span><span className="building-side"/><span className="building-roof"/></div>
