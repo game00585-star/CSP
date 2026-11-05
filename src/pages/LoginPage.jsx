@@ -3,6 +3,7 @@ import {useNavigate,Navigate} from 'react-router-dom';
 import {Warehouse,Eye,EyeOff,LockKeyhole,UserRound} from 'lucide-react';
 import {authenticate,getAuthSession,setAuthSession} from '../utils/auth';
 import Warehouse3D from '../components/Warehouse3D';
+import {warehouseGroups} from '../data/constants';
 
 export default function LoginPage(){
   const [user,setUser]=useState(''),[pass,setPass]=useState(''),[show,setShow]=useState(false),[remember,setRemember]=useState(true),[error,setError]=useState(''),[loading,setLoading]=useState(false);
@@ -15,10 +16,11 @@ export default function LoginPage(){
       <div className="visual-content">
         <div className="visual-logo"><Warehouse/></div><p className="eyebrow">CSP WAREHOUSE OPERATIONS</p>
         <h1>คลังที่เคลื่อนไหว<br/>อย่างเป็นระบบ</h1><p>จัดการสินค้า รับเข้า จ่ายออก และโอนคลังอย่างแม่นยำในพื้นที่ทำงานเดียว</p>
-        <div className="visual-stats"><div><b>5</b><span>กลุ่มคลัง</span></div><div><b>Stock Card</b><span>ติดตามการเคลื่อนไหว</span></div></div>
+        <div className="visual-stats"><div><b>{warehouseGroups.length}</b><span>กลุ่มคลัง</span></div><div><b>Stock Card</b><span>ติดตามการเคลื่อนไหว</span></div></div>
       </div>
     </section>
     <section className="login-form-wrap"><form onSubmit={submit} className="login-card">
+      <div className="login-mobile-brand"><Warehouse/><div><b>CSP</b><span>Foods Supply</span></div></div>
       <div className="login-card-head"><div className="login-mark"><Warehouse/></div><span>SECURE ACCESS</span></div>
       <h2>ยินดีต้อนรับกลับ</h2><p>เข้าสู่ระบบจัดการคลังสินค้า CSP</p>{error&&<div className="alert">{error}</div>}
       <label>ชื่อผู้ใช้งาน<div className="input-icon"><UserRound/><input value={user} onChange={event=>setUser(event.target.value)} placeholder="กรอกชื่อผู้ใช้งาน" autoComplete="username" required/></div></label>
