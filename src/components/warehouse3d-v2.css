@@ -18,3 +18,11 @@
 @media(max-width:780px){.warehouse-3d:not(.warehouse-3d-compact){min-height:560px}.warehouse-command-panel{left:14px;right:14px;top:14px;bottom:auto;width:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:12px}.warehouse-command-panel>span,.warehouse-command-panel h2,.warehouse-command-panel>p{grid-column:1/-1}.warehouse-command-panel h2{font-size:16px}.warehouse-command-panel>p{margin-bottom:0}.command-metric,.command-stock{margin-top:0;min-width:0}.warehouse-command-panel em{display:none}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:54%;top:66%;transform-origin:center}.warehouse-3d-legend{overflow-x:auto;justify-content:flex-start}.warehouse-3d-legend button{flex:0 0 auto}}
 @media(max-width:560px){.warehouse-command-panel{grid-template-columns:1fr 1fr}.command-stock{grid-column:1/-1}.warehouse-3d:not(.warehouse-3d-compact){min-height:600px}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:54%;top:69%}.warehouse-3d-toolbar select{max-width:145px}}
 @media(prefers-reduced-motion:reduce){.warehouse-3d *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Camera framing tuned against the supplied 1366px and mobile references. */
+.warehouse-3d:not(.warehouse-3d-compact){height:clamp(470px,36vw,560px)}
+.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:66%;top:54%}
+.warehouse-3d-compact .warehouse-3d-world{left:61%;top:67%}
+.warehouse-3d-compact .warehouse-building,.warehouse-3d-compact .warehouse-rack,.warehouse-3d-compact .warehouse-loader,.warehouse-3d-compact .warehouse-floor{filter:drop-shadow(0 12px 20px rgba(2,8,23,.38))}
+@media(max-width:1366px) and (min-width:781px){.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:68%;top:55%}.warehouse-command-panel{width:218px}}
+@media(max-width:700px){.warehouse-3d:not(.warehouse-3d-compact){height:auto;min-height:540px}.warehouse-command-panel{top:auto;bottom:52px;grid-template-columns:repeat(3,minmax(0,1fr));background:linear-gradient(180deg,rgba(7,18,46,.88),rgba(7,18,46,.98))}.warehouse-command-panel>span,.warehouse-command-panel h2,.warehouse-command-panel>p{display:none}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:66%;top:34%}.warehouse-3d-toolbar{top:12px}.warehouse-3d-legend{display:none}}
