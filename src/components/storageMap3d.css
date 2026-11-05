@@ -3,5 +3,20 @@
 @media(max-width:850px){.storage25-content{grid-template-columns:1fr}.storage25-navigator{order:2}.storage25-heading{padding:18px}.storage25-review{display:none}.storage25-toolbar{margin-inline:14px}.storage25-content{padding-inline:14px}.storage25-journey{margin-inline:14px;display:flex;overflow:auto}.storage25-journey>div{min-width:150px}.storage25-journey button{min-width:145px}.storage25-warehouse-list{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.storage25-shell{margin-inline:-5px;border-radius:16px}.storage25-heading h2{font-size:21px}.storage25-heading p{font-size:11px}.storage25-toolbar{grid-template-columns:1fr auto}.storage25-toolbar select{grid-column:1/-1}.storage25-search{grid-column:1/2;min-width:0}.storage25-tools button{width:39px;height:39px}.storage25-tools button:nth-child(1),.storage25-tools button:nth-child(2){display:none}.storage25-content{gap:10px}.storage25-stage-title{height:40px;padding:0 10px}.storage25-stage-title span{font-size:9px}.storage25-back{top:47px}.storage25-scene-note{left:8px;bottom:8px}.storage25-warehouse-list{grid-template-columns:1fr}.storage25-navigator{padding:14px}.storage25-journey{padding:8px}.storage25-journey>div{display:none}.storage25-journey button{min-width:128px}.storage25-location-list{max-height:220px}}
 @media(prefers-reduced-motion:reduce){.storage25-scene-transform,.storage25-hotspots polygon,.storage25-hotspots rect{transition:none}}
+
+/* Clean interactive layer: only the compact warehouse labels receive clicks. */
+.storage25-hotspots{pointer-events:none}
+.storage25-hotspots g{outline:none}
+.storage25-hotspots .warehouse-label-hit,.storage25-hotspots .rack-cell-hit{pointer-events:auto;outline:none}
+.storage25-hotspots .warehouse-label-hit rect{fill:#0a1939e8;stroke:#6e8bb9;stroke-width:.35;filter:drop-shadow(0 3px 4px #0009)}
+.storage25-hotspots .warehouse-label-hit text{fill:#fff;stroke:none;font-size:3.1px;dominant-baseline:middle;pointer-events:none}
+.storage25-hotspots .warehouse-label-hit:hover rect,.storage25-hotspots .warehouse-label-hit:focus-visible rect,.storage25-hotspots .warehouse-label-hit.selected rect{fill:#ffd20a;stroke:#fff4a0;filter:drop-shadow(0 0 6px #ffd20a)}
+.storage25-hotspots .warehouse-label-hit:hover text,.storage25-hotspots .warehouse-label-hit:focus-visible text,.storage25-hotspots .warehouse-label-hit.selected text{fill:#07142c}
+.storage25-hotspots .rack-cell-hit rect{fill:#ffd20a00;stroke:#ffd20a00;stroke-width:.35;outline:none}
+.storage25-hotspots .rack-cell-hit:hover rect,.storage25-hotspots .rack-cell-hit:focus-visible rect{fill:#ffd20a12;stroke:#ffe05a}
+.storage25-hotspots .rack-cell-hit rect.selected{fill:#ffd20a1a;stroke:#ffd20a;stroke-width:.7;filter:drop-shadow(0 0 4px #ffd20a)}
+.storage25-content:not(.rack-view) .storage25-viewport{aspect-ratio:7/4}
+.storage25-content.rack-view .storage25-viewport{aspect-ratio:3/2}
+.storage25-scene-transform img{object-position:center}
 .rack-view .storage25-viewport{aspect-ratio:862/528}
 .legacy-storage-tools{margin:18px 0;border:1px solid #cbd5e1;border-radius:14px;background:#fff;overflow:hidden}.legacy-storage-tools>summary{padding:13px 16px;cursor:pointer;color:#334155;font-weight:800}.legacy-storage-tools[open]>summary{border-bottom:1px solid #e2e8f0;background:#f8fafc}.legacy-storage-tools-body{padding:16px}
