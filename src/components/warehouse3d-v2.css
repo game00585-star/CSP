@@ -1,0 +1,20 @@
+/* Premium layout overrides: presentation only; warehouse data remains unchanged. */
+.warehouse-3d:not(.warehouse-3d-compact){min-height:470px}
+.warehouse-command-panel{position:absolute;z-index:8;left:22px;top:22px;bottom:72px;width:224px;padding:18px;border:1px solid rgba(250,204,0,.32);border-radius:18px;background:linear-gradient(145deg,rgba(5,18,48,.94),rgba(12,28,68,.82));box-shadow:0 22px 60px rgba(1,7,24,.38),inset 0 1px rgba(255,255,255,.08);backdrop-filter:blur(16px);color:#f8fafc;pointer-events:none}
+.warehouse-command-panel>span{display:block;color:#facc00;font-size:10px;font-weight:900;letter-spacing:.12em}
+.warehouse-command-panel h2{margin:5px 0 2px;font-size:18px;line-height:1.25}
+.warehouse-command-panel>p{margin:0 0 12px;color:#9fb0ce;font-size:11px}
+.command-metric{display:flex;align-items:center;gap:10px;margin-top:7px;padding:9px;border:1px solid rgba(148,163,184,.18);border-radius:12px;background:rgba(255,255,255,.055)}
+.command-metric i{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(250,204,0,.14);color:#facc00}
+.command-metric svg{width:17px;height:17px}.command-metric small,.command-stock small{display:block;color:#94a3b8;font-size:9px}.command-metric b{font-size:13px}
+.command-stock{margin-top:7px;padding:10px 11px;border-radius:12px;background:linear-gradient(120deg,rgba(5,150,105,.25),rgba(16,185,129,.08));border:1px solid rgba(52,211,153,.25)}
+.command-stock b{display:inline-block;margin-top:2px;color:#6ee7b7;font-size:19px;font-variant-numeric:tabular-nums}.command-stock span{margin-left:5px;color:#9fb0ce;font-size:9px}
+.warehouse-command-panel em{position:absolute;bottom:12px;left:18px;color:#6f82a7;font-size:9px;font-style:normal}
+.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:64%;top:51%;transform-origin:center center}
+.warehouse-3d-compact{min-height:100%;overflow:hidden}
+.warehouse-3d-compact .warehouse-3d-world{left:59%;top:59%;transform-origin:center center}
+.warehouse-3d-compact .warehouse-3d-toolbar{top:auto;right:18px;bottom:18px}
+@media(max-width:1050px){.warehouse-command-panel{width:205px}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:66%;transform:translate(-50%,-50%) scale(.88) rotateX(-16deg) rotateY(-28deg)}}
+@media(max-width:780px){.warehouse-3d:not(.warehouse-3d-compact){min-height:560px}.warehouse-command-panel{left:14px;right:14px;top:14px;bottom:auto;width:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:12px}.warehouse-command-panel>span,.warehouse-command-panel h2,.warehouse-command-panel>p{grid-column:1/-1}.warehouse-command-panel h2{font-size:16px}.warehouse-command-panel>p{margin-bottom:0}.command-metric,.command-stock{margin-top:0;min-width:0}.warehouse-command-panel em{display:none}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:54%;top:66%;transform-origin:center}.warehouse-3d-legend{overflow-x:auto;justify-content:flex-start}.warehouse-3d-legend button{flex:0 0 auto}}
+@media(max-width:560px){.warehouse-command-panel{grid-template-columns:1fr 1fr}.command-stock{grid-column:1/-1}.warehouse-3d:not(.warehouse-3d-compact){min-height:600px}.warehouse-3d:not(.warehouse-3d-compact) .warehouse-3d-world{left:54%;top:69%}.warehouse-3d-toolbar select{max-width:145px}}
+@media(prefers-reduced-motion:reduce){.warehouse-3d *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

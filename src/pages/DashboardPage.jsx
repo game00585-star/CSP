@@ -215,7 +215,7 @@ export default function DashboardPage() {
         title="ภาพรวมคลังสินค้า"
         subtitle="ข้อมูลการดำเนินงานล่าสุดของ CSP Foods Supply"
       />
-      <Warehouse3D products={products}/>
+      <Warehouse3D products={products} onSelect={group=>nav(`/warehouse/${group.path}`)}/>
       <div className="stats-grid">
         {cards.map(([Icon, label, value, unit, color, to]) => (
           <StatCard
