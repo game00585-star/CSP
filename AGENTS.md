@@ -1,4 +1,3 @@
-Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' provider failed.
 # CSP Stock Count — Codex project instructions
 
 ## Project design authority
