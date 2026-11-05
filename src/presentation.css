@@ -111,6 +111,29 @@ html.dark-theme body::before {
 .logout { color: #ffaaa9; }
 .sidebar-edge-toggle { border-color: rgba(111,120,255,.24); color: #5962df; box-shadow: 0 8px 24px rgba(12,16,45,.20); }
 
+.sidebar-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 12px 0;
+  padding: 11px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.035));
+  box-shadow: inset 0 1px rgba(255,255,255,.08);
+  backdrop-filter: blur(14px);
+}
+.sidebar-profile > span { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:50%; font-weight:700; background:linear-gradient(145deg,#8d94ff,#5d61e8); }
+.sidebar-profile b,.sidebar-profile small { display:block; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sidebar-profile b { font-size:12px; }
+.sidebar-profile small { margin-top:3px; color:rgba(225,224,247,.54); font-size:9px; }
+.sidebar-profile i { position:absolute; right:11px; top:12px; width:7px; height:7px; border:2px solid #151a3b; border-radius:50%; background:#4ade80; box-shadow:0 0 10px rgba(74,222,128,.75); }
+.nav-section-label { margin:0 12px 8px; color:rgba(225,224,247,.34); font-size:8px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; }
+.nav-section-secondary { margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); }
+.sidebar.collapsed .nav-section-label,.sidebar.collapsed .sidebar-profile { display:none; }
+
 .main-wrap { background: transparent; }
 .main-wrap > header {
   height: 82px;
@@ -288,34 +311,54 @@ html.dark-theme .shelf-alert.safe .shelf-alert-head { background: linear-gradien
 .toast { border: 1px solid rgba(110,231,183,.25); border-left: 4px solid #34d399; border-radius: 12px; background: rgba(13,50,42,.94); backdrop-filter: blur(12px); }
 html.dark-theme .period-current, html.dark-theme .period-create { background: linear-gradient(120deg, rgba(26,30,67,.90), rgba(18,22,52,.82)); }
 
-/* Login */
-.login-page { background: #0b0f2b; }
+/* Login — presentation only; authentication remains in LoginPage.jsx */
+.login-page { grid-template-columns:1.04fr .96fr; background:#101114; }
 .login-visual {
-  background:
-    linear-gradient(145deg, rgba(15,20,57,.94), rgba(29,27,87,.90)),
-    radial-gradient(circle at 80% 20%, #535de0, transparent 42%);
+  isolation:isolate;
+  background:#f6cd08;
 }
-.login-visual::before { width: 620px; height: 620px; right: -250px; top: -250px; border-color: rgba(198,188,255,.13); }
-.login-visual::after { width: 420px; height: 420px; border-color: rgba(198,188,255,.10); }
+.login-visual::before { width:620px; height:620px; right:-280px; top:-260px; border-color:rgba(15,16,19,.13); }
+.login-visual::after { width:420px; height:420px; border-color:rgba(15,16,19,.10); }
+.login-visual::before,.login-visual::after { z-index:-1; }
+.login-scene { position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }
+.scene-orbit { position:absolute; border:1px solid rgba(17,18,22,.12); border-radius:50%; }
+.orbit-one { width:520px; height:520px; right:-120px; top:12%; }
+.orbit-two { width:300px; height:300px; right:60px; top:30%; }
+.scene-package { position:absolute; display:grid; place-items:center; width:66px; height:66px; border:2px solid #15161a; color:#15161a; background:rgba(255,255,255,.20); font-size:12px; font-weight:800; box-shadow:8px 8px 0 rgba(21,22,26,.12); animation:scene-float 4s ease-in-out infinite; }
+.package-one { right:13%; top:18%; transform:rotate(9deg); }
+.package-two { right:31%; bottom:16%; width:48px; height:48px; animation-delay:-1.7s; }
+.scene-runner { position:absolute; left:-90px; bottom:12%; display:grid; place-items:center; width:74px; height:74px; color:#f6cd08; border-radius:20px; background:#15161a; box-shadow:0 20px 50px rgba(21,22,26,.22); animation:warehouse-run 9s cubic-bezier(.45,.02,.55,.98) infinite; }
+.scene-runner svg { width:36px; height:36px; animation:runner-bob .42s ease-in-out infinite alternate; }
+.scene-track { position:absolute; left:7%; right:7%; bottom:10%; height:2px; background:rgba(21,22,26,.18); }
 .visual-content { max-width: 560px; }
-.visual-content h1 { max-width: 540px; font-size: clamp(48px,4vw,66px); font-weight: 420; line-height: 1.08; letter-spacing: -.045em; }
-.visual-content > p:not(.eyebrow) { max-width: 480px; color: rgba(231,228,255,.66); font-size: 16px; }
-.eyebrow { color: #9da3ff; letter-spacing: .22em; }
-.visual-stats { border-top-color: rgba(198,188,255,.17); }
-.visual-stats b { color: #fff; font-size: 26px; font-weight: 520; }
-.visual-stats span { color: rgba(231,228,255,.54); }
-.login-form-wrap { position: relative; background: linear-gradient(145deg,#f8f9ff,#eef1fb); }
-.login-card { width: min(420px,100%); padding: 38px; border: 1px solid rgba(62,75,130,.10); border-radius: 20px; background: rgba(255,255,255,.82); box-shadow: 0 30px 80px rgba(17,24,58,.12); backdrop-filter: blur(18px); }
-.login-card h2 { color: #171b35; font-size: 28px; font-weight: 570; letter-spacing: -.035em; }
-.login-card > p { color: #7a829a; }
-.login-card > label { color: #3e465d; }
-.login-btn { height: 48px; }
-html.dark-theme .login-page { color: #171b35; }
-html.dark-theme .login-form-wrap { background: linear-gradient(145deg,#111535,#0c102b); }
-html.dark-theme .login-card { color: #f3f1ff; border-color: rgba(200,190,255,.14); background: rgba(25,29,65,.80); box-shadow: 0 35px 90px rgba(2,4,20,.40); }
-html.dark-theme .login-card h2 { color: #f3f1ff; }
-html.dark-theme .login-card > p { color: rgba(223,220,247,.60); }
-html.dark-theme .login-card > label { color: rgba(243,241,255,.80); }
+.visual-logo { color:#f6cd08; border-color:#15161a; background:#15161a; box-shadow:10px 10px 0 rgba(21,22,26,.12); }
+.visual-content h1 { max-width:540px; color:#15161a; font-size:clamp(48px,4vw,66px); font-weight:650; line-height:1.04; letter-spacing:-.055em; }
+.visual-content > p:not(.eyebrow) { max-width:480px; color:rgba(21,22,26,.68); font-size:16px; }
+.eyebrow { color:#15161a; letter-spacing:.22em; }
+.visual-stats { border-top-color:rgba(21,22,26,.18); }
+.visual-stats b { color:#15161a; font-size:26px; font-weight:650; }
+.visual-stats span { color:rgba(21,22,26,.56); }
+.login-form-wrap { position:relative; background:radial-gradient(circle at 80% 10%,rgba(246,205,8,.08),transparent 30%),#111216; }
+.login-form-wrap::before { content:""; position:absolute; inset:26px; border:1px solid rgba(255,255,255,.045); pointer-events:none; }
+.login-card { width:min(420px,100%); padding:40px; color:#f6f7fb; border:1px solid rgba(255,255,255,.09); border-radius:22px; background:rgba(28,29,35,.86); box-shadow:0 35px 90px rgba(0,0,0,.32); backdrop-filter:blur(18px); }
+.login-card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.login-card-head .login-mark { margin:0; color:#15161a; border-color:#f6cd08; background:#f6cd08; box-shadow:0 10px 28px rgba(246,205,8,.16); }
+.login-card-head > span { color:rgba(255,255,255,.38); font-size:9px; font-weight:700; letter-spacing:.2em; }
+.login-card h2 { color:#fff; font-size:31px; font-weight:580; letter-spacing:-.04em; }
+.login-card > p { color:rgba(255,255,255,.48); }
+.login-card > label { color:rgba(255,255,255,.78); }
+.login-card input { color:#fff; border-color:rgba(255,255,255,.11); background:#14151a; }
+.login-card input:focus { border-color:#f6cd08; box-shadow:0 0 0 4px rgba(246,205,8,.10); }
+.login-card .input-icon > svg,.login-card .input-icon button { color:rgba(255,255,255,.42); }
+.login-card .remember,.login-card .secure { color:rgba(255,255,255,.42); }
+.login-card .primary { color:#15161a; background:#f6cd08; box-shadow:0 12px 30px rgba(246,205,8,.16); }
+.login-card .primary:hover { background:#ffdc2b; }
+.login-btn { height:50px; }
+html.dark-theme .login-page { color:#f6f7fb; }
+
+@keyframes warehouse-run { 0% { left:-90px; transform:rotate(-3deg); } 42%,58% { left:calc(50% - 37px); transform:rotate(0); } 100% { left:calc(100% + 20px); transform:rotate(3deg); } }
+@keyframes runner-bob { from { transform:translateY(-2px); } to { transform:translateY(3px); } }
+@keyframes scene-float { 0%,100% { margin-top:0; } 50% { margin-top:-12px; } }
 
 /* Settings and secondary panels */
 .settings-layout { gap: 20px; }
