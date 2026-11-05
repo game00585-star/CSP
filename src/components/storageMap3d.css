@@ -18,5 +18,23 @@
 .storage25-content:not(.rack-view) .storage25-viewport{aspect-ratio:7/4}
 .storage25-content.rack-view .storage25-viewport{aspect-ratio:3/2}
 .storage25-scene-transform img{object-position:center}
+.storage25-hotspots .warehouse-label-hit rect{fill:#071832ed;stroke:#ffd20a;stroke-width:.35}
+.storage25-hotspots .warehouse-label-hit text{font-size:3.35px;font-weight:950}
+.storage25-hotspots .rack-cell-hit circle.rack-index-badge{fill:#ffd20a;stroke:#ffe780;stroke-width:.3;filter:drop-shadow(0 0 5px #ffd20a)}
+.storage25-hotspots .rack-cell-hit text.rack-index-text{fill:#07142c;stroke:none;font-size:2.5px;font-weight:950;pointer-events:none}
+.storage25-scene-pager{position:absolute;z-index:9;right:16px;bottom:14px;display:flex;align-items:center;gap:7px;padding:5px 7px;border:1px solid #365a8d;border-radius:12px;background:#081b3fe8}
+.storage25-scene-pager button,.storage25-inline-pager button{display:grid;place-items:center;width:31px;height:31px;border:1px solid #315487;border-radius:9px;background:#10294f;color:#fff}
+.storage25-scene-pager button:hover:not(:disabled),.storage25-inline-pager button:hover:not(:disabled){border-color:#ffd20a;color:#ffd20a}
+.storage25-scene-pager button:disabled,.storage25-inline-pager button:disabled{opacity:.3;cursor:not-allowed}
+.storage25-scene-pager svg,.storage25-inline-pager svg{width:16px}
+.storage25-scene-pager span,.storage25-inline-pager span{min-width:52px;color:#dbe7fb;font-size:11px;text-align:center}
+.storage25-inline-pager{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px}
+.storage25-rack-guide{display:flex;align-items:center;gap:12px;margin:14px 0;padding:14px;border:1px solid #8f7a24;border-radius:14px;background:linear-gradient(135deg,#132743,#202b31);box-shadow:0 0 18px #ffd20a20}
+.storage25-rack-guide>svg{width:35px;height:35px;color:#ffd20a}
+.storage25-rack-guide span,.storage25-rack-guide b,.storage25-rack-guide small{display:block}
+.storage25-rack-guide small{margin-top:3px;color:#9fb3d7;font-size:10px}
+.storage25-location-list button i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#ffd20a;box-shadow:0 0 12px #ffd20a80;color:#07142c;font-style:normal;font-weight:950}
+.storage25-location-list button>svg:last-child{margin-left:auto;color:#fff}
+@media(max-width:720px){.storage25-scene-pager{right:8px;bottom:8px}.storage25-scene-note{left:8px;bottom:8px;max-width:52%;padding:6px 8px}.storage25-scene-pager span{min-width:40px}.storage25-rack-guide{padding:10px}}
 .rack-view .storage25-viewport{aspect-ratio:862/528}
 .legacy-storage-tools{margin:18px 0;border:1px solid #cbd5e1;border-radius:14px;background:#fff;overflow:hidden}.legacy-storage-tools>summary{padding:13px 16px;cursor:pointer;color:#334155;font-weight:800}.legacy-storage-tools[open]>summary{border-bottom:1px solid #e2e8f0;background:#f8fafc}.legacy-storage-tools-body{padding:16px}
