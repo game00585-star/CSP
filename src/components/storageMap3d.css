@@ -16,10 +16,11 @@
 .storage25-hotspots .rack-cell-hit:hover rect,.storage25-hotspots .rack-cell-hit:focus-visible rect{fill:#ffd20a12;stroke:#ffe05a}
 .storage25-hotspots .rack-cell-hit rect.selected{fill:#ffd20a1a;stroke:#ffd20a;stroke-width:.7;filter:drop-shadow(0 0 4px #ffd20a)}
 .storage25-content:not(.rack-view) .storage25-viewport{aspect-ratio:7/4}
-.storage25-content.rack-view .storage25-viewport{aspect-ratio:3/2}
+.storage25-content.rack-view .storage25-viewport{aspect-ratio:53/32}
 .storage25-scene-transform img{object-position:center}
 .storage25-hotspots .warehouse-label-hit rect{fill:#071832ed;stroke:#ffd20a;stroke-width:.35}
 .storage25-hotspots .warehouse-label-hit text{font-size:3.35px;font-weight:950}
+.storage25-hotspots .warehouse-label-hit line{stroke:#ffd20a;stroke-width:.55;stroke-linecap:round;pointer-events:none}
 .storage25-hotspots .rack-cell-hit circle.rack-index-badge{fill:#ffd20a;stroke:#ffe780;stroke-width:.3;filter:drop-shadow(0 0 5px #ffd20a)}
 .storage25-hotspots .rack-cell-hit text.rack-index-text{fill:#07142c;stroke:none;font-size:2.5px;font-weight:950;pointer-events:none}
 .storage25-scene-pager{position:absolute;z-index:9;right:16px;bottom:14px;display:flex;align-items:center;gap:7px;padding:5px 7px;border:1px solid #365a8d;border-radius:12px;background:#081b3fe8}
@@ -35,6 +36,15 @@
 .storage25-rack-guide small{margin-top:3px;color:#9fb3d7;font-size:10px}
 .storage25-location-list button i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#ffd20a;box-shadow:0 0 12px #ffd20a80;color:#07142c;font-style:normal;font-weight:950}
 .storage25-location-list button>svg:last-child{margin-left:auto;color:#fff}
+.storage25-hotspots .rack-location-card{pointer-events:auto;outline:none;cursor:pointer}
+.storage25-hotspots .rack-location-card>rect{fill:#08234ded;stroke:#274d7d;stroke-width:.18;filter:drop-shadow(0 2px 3px #0008)}
+.storage25-hotspots .rack-location-card:hover>rect,.storage25-hotspots .rack-location-card:focus-visible>rect,.storage25-hotspots .rack-location-card>rect.selected{fill:#0c2e61;stroke:#ffd20a;stroke-width:.3;filter:drop-shadow(0 0 4px #ffd20a)}
+.storage25-hotspots .rack-location-card circle{fill:#ffd20a;stroke:#ffe77a;stroke-width:.12;filter:drop-shadow(0 0 2px #ffd20a);pointer-events:none}
+.storage25-hotspots .rack-location-card text{stroke:none;text-anchor:start;dominant-baseline:middle;pointer-events:none}
+.storage25-hotspots .rack-location-card .rack-card-number{fill:#07142c;font-size:1.05px;font-weight:950;text-anchor:middle}
+.storage25-hotspots .rack-location-card .rack-card-name{fill:#fff;font-size:1.05px;font-weight:900}
+.storage25-hotspots .rack-location-card .rack-card-capacity{fill:#c4d2e8;font-size:.72px;font-weight:500}
+.storage25-hotspots .rack-location-card .rack-card-arrow{fill:#fff;font-size:1.45px;font-weight:900}
 @media(max-width:720px){.storage25-scene-pager{right:8px;bottom:8px}.storage25-scene-note{left:8px;bottom:8px;max-width:52%;padding:6px 8px}.storage25-scene-pager span{min-width:40px}.storage25-rack-guide{padding:10px}}
 .rack-view .storage25-viewport{aspect-ratio:862/528}
 .legacy-storage-tools{margin:18px 0;border:1px solid #cbd5e1;border-radius:14px;background:#fff;overflow:hidden}.legacy-storage-tools>summary{padding:13px 16px;cursor:pointer;color:#334155;font-weight:800}.legacy-storage-tools[open]>summary{border-bottom:1px solid #e2e8f0;background:#f8fafc}.legacy-storage-tools-body{padding:16px}
