@@ -23,24 +23,25 @@ textarea { font-family: var(--csp-font); }
 /* Desktop login: artwork and form stay in separate, stable columns. */
 @media (min-width: 981px) {
   .sidebar:not(.collapsed) {
-    width: 278px;
-    inset: 12px auto 12px 12px;
-    height: calc(100vh - 24px);
-    padding: 12px;
+    width: 286px;
+    inset: 3px auto 3px 3px;
+    height: calc(100vh - 6px);
+    padding: 10px;
     border: 1px solid rgba(181, 225, 255, .82);
-    border-radius: 24px;
+    border-radius: 22px;
     background:
       radial-gradient(circle at 15% 2%, rgba(115, 153, 255, .52), transparent 26%),
       radial-gradient(circle at 86% 96%, rgba(225, 102, 255, .42), transparent 28%),
       linear-gradient(165deg, rgba(72, 98, 178, .95), rgba(28, 51, 112, .96) 48%, rgba(80, 75, 166, .94));
     box-shadow: 0 0 0 2px rgba(121, 176, 255, .15), 0 0 34px rgba(92, 166, 255, .42), 0 0 72px rgba(174, 93, 255, .22), inset 0 1px rgba(255,255,255,.4);
-    overflow: hidden;
+    overflow: visible;
   }
 
   .sidebar:not(.collapsed)::before {
     content: "";
     position: absolute;
     inset: 0;
+    border-radius: inherit;
     pointer-events: none;
     background: linear-gradient(110deg, rgba(255,255,255,.12), transparent 34%, rgba(101,211,255,.08) 66%, rgba(255,139,245,.12));
   }
@@ -91,7 +92,7 @@ textarea { font-family: var(--csp-font); }
   }
 
   .sidebar:not(.collapsed) .sidebar-profile i { top: 12px; right: 12px; width: 9px; height: 9px; border-color: #4160b4; box-shadow: 0 0 12px #36ff9a; }
-  .sidebar:not(.collapsed) nav { position: relative; z-index: 1; padding: 0; scrollbar-width: thin; scrollbar-color: rgba(177,207,255,.35) transparent; }
+  .sidebar:not(.collapsed) nav { position: relative; z-index: 1; min-height: 0; padding: 0 2px 8px 0; scrollbar-width: thin; scrollbar-color: rgba(177,207,255,.35) transparent; }
   .sidebar:not(.collapsed) .nav-section-label { margin: 2px 8px 5px; color: rgba(235,244,255,.67); font-size: 10px; letter-spacing: .05em; text-transform: none; }
 
   .sidebar:not(.collapsed) .nav-item {
@@ -166,8 +167,19 @@ textarea { font-family: var(--csp-font); }
     background: linear-gradient(100deg, rgba(255,105,145,.12), rgba(224,112,255,.2));
     box-shadow: 0 0 18px rgba(232,101,255,.16), inset 0 1px rgba(255,255,255,.1);
   }
-  .sidebar:not(.collapsed) .sidebar-edge-toggle { right: -15px; top: 88px; }
-  .sidebar:not(.collapsed) + .main-wrap { margin-left: 302px; width: calc(100% - 302px); }
+  .sidebar:not(.collapsed) .sidebar-edge-toggle {
+    top: 91px;
+    right: -19px;
+    z-index: 45;
+    width: 38px;
+    height: 38px;
+    border: 2px solid rgba(137, 180, 255, .72);
+    color: #5572d9;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(62, 104, 206, .16), 0 8px 24px rgba(12, 28, 81, .3);
+  }
+  .sidebar:not(.collapsed) .sidebar-edge-toggle svg { width: 19px; height: 19px; }
+  .sidebar:not(.collapsed) + .main-wrap { margin-left: 306px; width: calc(100% - 306px); }
 
   .login-page {
     min-height: 100svh;
