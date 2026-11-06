@@ -1,16 +1,42 @@
-import {useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {useNavigate,Navigate} from 'react-router-dom';
 import {Warehouse,Eye,EyeOff,LockKeyhole,UserRound} from 'lucide-react';
 import {authenticate,getAuthSession,setAuthSession} from '../utils/auth';
 import Warehouse3D from '../components/Warehouse3D';
 import {warehouseGroups} from '../data/constants';
+import './loginIntro.css';
 
 export default function LoginPage(){
   const [user,setUser]=useState(''),[pass,setPass]=useState(''),[show,setShow]=useState(false),[remember,setRemember]=useState(true),[error,setError]=useState(''),[loading,setLoading]=useState(false);
+  const [introVisible,setIntroVisible]=useState(true),[introLeaving,setIntroLeaving]=useState(false);
+  const introVideo=useRef(null);
   const nav=useNavigate();
-  if(getAuthSession())return <Navigate to="/warehouse-periods" replace/>;
+  const existingSession=getAuthSession();
+  useEffect(()=>{
+    if(existingSession)return undefined;
+    const video=introVideo.current;
+    if(!video)return undefined;
+    const play=video.play();
+    if(play?.catch)play.catch(()=>setIntroVisible(false));
+    return undefined;
+  },[existingSession]);
+  if(existingSession)return <Navigate to="/warehouse-periods" replace/>;
+  const finishIntro=()=>{
+    if(introLeaving)return;
+    setIntroLeaving(true);
+    window.setTimeout(()=>setIntroVisible(false),650);
+  };
   const submit=event=>{event.preventDefault();setError('');setLoading(true);try{const matched=authenticate(user,pass);setAuthSession(matched,remember);nav('/warehouse-periods')}catch(loginError){setError(loginError?.message||'ไม่สามารถเข้าสู่ระบบได้')}finally{setLoading(false)}};
-  return <div className="login-page">
+  return <>
+    {introVisible&&<section className={`login-intro${introLeaving?' is-leaving':''}`} aria-label="ภาพเปิดระบบ CSP Warehouse">
+      <video ref={introVideo} className="login-intro-video" muted playsInline preload="auto" autoPlay poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/2307e4bf-be39-42b4-b579-e168aeccabf0.jpg" onEnded={finishIntro} onError={()=>setIntroVisible(false)}>
+        <source media="(max-width: 900px)" src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/b3718419-7a0a-478d-bfb0-0ff8bef7f3f7.mp4" type="video/mp4"/>
+        <source src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/409763c0-95f4-49d3-a601-dc564d55072b.mp4" type="video/mp4"/>
+      </video>
+      <button type="button" className="login-intro-skip" onClick={finishIntro}>ข้ามเข้าสู่ระบบ</button>
+      <div className="login-intro-progress" aria-hidden="true"/>
+    </section>}
+    <div className={`login-page login-after-intro${introVisible?' is-waiting':''}`}>
     <section className="login-visual">
       <Warehouse3D compact/>
       <div className="visual-content">
@@ -28,5 +54,7 @@ export default function LoginPage(){
       <div className="remember"><label><input type="checkbox" checked={remember} onChange={event=>setRemember(event.target.checked)}/> จดจำการเข้าสู่ระบบ</label></div>
       <button className="btn primary login-btn" disabled={loading}>{loading?'กำลังเข้าสู่ระบบ...':'เข้าสู่ระบบ'}</button><small className="secure">ระบบภายในสำหรับพนักงาน CSP Foods Supply เท่านั้น</small>
     </form></section>
-  </div>;
+    </div>
+  </>;
 }
+
