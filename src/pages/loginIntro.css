@@ -18,12 +18,16 @@
 }
 
 .login-intro-video {
+  position: absolute;
+  top: -8vh;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% + 8vh);
   display: block;
   object-fit: cover;
   object-position: center;
   background: #030a1d;
+  filter: contrast(1.08) saturate(1.06);
 }
 
 .login-intro::after {
@@ -110,7 +114,11 @@
 }
 
 @media (max-width: 700px) {
-  .login-intro-video { object-position: center; }
+  .login-intro-video {
+    top: -7vh;
+    height: calc(100% + 7vh);
+    object-position: center;
+  }
   .login-intro-skip { right: 16px; bottom: 16px; }
 }
 
