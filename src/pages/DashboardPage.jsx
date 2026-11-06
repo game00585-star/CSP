@@ -29,7 +29,6 @@ import { warehouseGroups, movementLabels } from "../data/constants";
 import { fmt, localDateKey, stockStatus } from "../utils/helpers";
 import { PageHeader, StatCard, StatusBadge, Empty } from "../components/common";
 import PowerPointExport from "../components/PowerPointExport";
-import Warehouse3D from "../components/Warehouse3D";
 
 const dayMs = 24 * 60 * 60 * 1000;
 const validDate = (year, month, day) => {
@@ -215,7 +214,6 @@ export default function DashboardPage() {
         title="ภาพรวมคลังสินค้า"
         subtitle="ข้อมูลการดำเนินงานล่าสุดของ CSP Foods Supply"
       />
-      <Warehouse3D products={products} onSelect={group=>nav(`/warehouse/${group.path}`)}/>
       <div className="stats-grid">
         {cards.map(([Icon, label, value, unit, color, to]) => (
           <StatCard
@@ -557,3 +555,4 @@ export default function DashboardPage() {
     </>
   );
 }
+
