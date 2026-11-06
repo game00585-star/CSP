@@ -411,3 +411,54 @@
   .storage25-strip-list{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.storage25-strip-card{animation:none;transition:none}}
+
+/* Scroll driven handoff: the horizontal selector folds toward the right navigator. */
+.storage25-facility-strip{
+  height:var(--dock-strip-height);
+  min-height:0;
+  margin-top:var(--dock-strip-margin);
+  margin-bottom:var(--dock-strip-margin);
+  padding-top:var(--dock-strip-padding);
+  padding-bottom:var(--dock-strip-padding);
+  opacity:var(--dock-inverse);
+  transform:translate3d(var(--dock-strip-shift-x),var(--dock-strip-shift-y),0) perspective(900px) rotateX(var(--dock-strip-rotate)) scale(var(--dock-strip-scale));
+  transform-origin:88% 50%;
+  overflow:hidden;
+  will-change:transform,opacity;
+  transition:none;
+}
+.storage25-strip-card{
+  animation:none;
+  transform:translate3d(var(--strip-x),var(--strip-y),var(--strip-z)) rotateZ(var(--strip-rotate)) scale(var(--strip-scale));
+  transform-origin:90% 50%;
+  will-change:transform,opacity;
+}
+.storage25-strip-card:hover{transform:translate3d(var(--strip-x),calc(var(--strip-y) - 1px),var(--strip-z)) rotateZ(var(--strip-rotate)) scale(var(--strip-scale))}
+.storage25-navigator .storage25-stack-shell,
+.storage25-navigator .storage25-inline-pager,
+.storage25-navigator>.storage25-primary{
+  opacity:var(--dock-progress);
+  transform:translate3d(0,var(--dock-nav-shift-y),0) scale(var(--dock-nav-scale));
+  transform-origin:50% 0;
+  pointer-events:none;
+  will-change:transform,opacity;
+}
+.storage25-shell.is-selector-docked .storage25-navigator .storage25-stack-shell,
+.storage25-shell.is-selector-docked .storage25-navigator .storage25-inline-pager,
+.storage25-shell.is-selector-docked .storage25-navigator>.storage25-primary{pointer-events:auto}
+.storage25-shell.is-selector-docked .storage25-facility-strip{pointer-events:none}
+
+@media(max-width:900px){
+  .storage25-facility-strip{height:auto;margin:8px 12px;padding:6px;opacity:1;transform:none;overflow:visible}
+  .storage25-strip-list{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}
+  .storage25-strip-card{min-width:190px;transform:none!important;scroll-snap-align:start}
+  .storage25-navigator .storage25-stack-shell,
+  .storage25-navigator .storage25-inline-pager,
+  .storage25-navigator>.storage25-primary{opacity:1;transform:none;pointer-events:auto}
+}
+@media(prefers-reduced-motion:reduce){
+  .storage25-facility-strip,.storage25-strip-card,
+  .storage25-navigator .storage25-stack-shell,
+  .storage25-navigator .storage25-inline-pager,
+  .storage25-navigator>.storage25-primary{transform:none}
+}
