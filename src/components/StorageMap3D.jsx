@@ -1,4 +1,3 @@
-Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' provider failed.
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {ChevronDown,ChevronLeft,ChevronRight,ChevronUp,ExternalLink,Focus,Info,Layers3,MapPin,Minus,Plus,Search} from 'lucide-react';
 import overviewScene from '../assets/storage-map/overview-scene-approved.png';
