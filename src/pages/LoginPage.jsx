@@ -6,9 +6,12 @@ import Warehouse3D from '../components/Warehouse3D';
 import {warehouseGroups} from '../data/constants';
 import './loginIntro.css';
 
+const INTRO_1080P='https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/409763c0-95f4-49d3-a601-dc564d55072b.mp4';
+const INTRO_FALLBACK='/media/csp-login-intro.mp4';
+
 export default function LoginPage(){
   const [user,setUser]=useState(''),[pass,setPass]=useState(''),[show,setShow]=useState(false),[remember,setRemember]=useState(true),[error,setError]=useState(''),[loading,setLoading]=useState(false);
-  const [introVisible,setIntroVisible]=useState(true),[introLeaving,setIntroLeaving]=useState(false),[introError,setIntroError]=useState(false);
+  const [introVisible,setIntroVisible]=useState(true),[introLeaving,setIntroLeaving]=useState(false),[introError,setIntroError]=useState(false),[introSource,setIntroSource]=useState(INTRO_1080P);
   const introVideo=useRef(null);
   const nav=useNavigate();
   const existingSession=getAuthSession();
@@ -19,7 +22,7 @@ export default function LoginPage(){
     const play=video.play();
     if(play?.catch)play.catch(()=>setIntroError(true));
     return undefined;
-  },[existingSession]);
+  },[existingSession,introSource]);
   if(existingSession)return <Navigate to="/warehouse-periods" replace/>;
   const finishIntro=()=>{
     if(introLeaving)return;
@@ -29,9 +32,7 @@ export default function LoginPage(){
   const submit=event=>{event.preventDefault();setError('');setLoading(true);try{const matched=authenticate(user,pass);setAuthSession(matched,remember);nav('/warehouse-periods')}catch(loginError){setError(loginError?.message||'ไม่สามารถเข้าสู่ระบบได้')}finally{setLoading(false)}};
   return <>
     {introVisible&&<section className={`login-intro${introLeaving?' is-leaving':''}`} aria-label="ภาพเปิดระบบ CSP Warehouse">
-      <video ref={introVideo} className="login-intro-video" muted playsInline preload="auto" autoPlay onEnded={finishIntro} onError={()=>setIntroError(true)}>
-        <source src="/media/csp-login-intro.mp4" type="video/mp4"/>
-      </video>
+      <video key={introSource} ref={introVideo} className="login-intro-video" src={introSource} muted playsInline preload="auto" autoPlay onCanPlay={()=>setIntroError(false)} onEnded={finishIntro} onError={()=>{if(introSource!==INTRO_FALLBACK)setIntroSource(INTRO_FALLBACK);else setIntroError(true)}}/>
       {introError&&<div className="login-intro-fallback" role="status"><strong>วิดีโอพร้อมเล่น</strong><span>กดเพื่อดำเนินการต่อเข้าสู่ระบบ</span></div>}
       <button type="button" className="login-intro-skip" onClick={finishIntro}>{introError?'เข้าสู่หน้า Login':'ข้ามเข้าสู่ระบบ'}</button>
       <div className="login-intro-progress" aria-hidden="true"/>
