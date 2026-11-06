@@ -22,6 +22,153 @@ textarea { font-family: var(--csp-font); }
 
 /* Desktop login: artwork and form stay in separate, stable columns. */
 @media (min-width: 981px) {
+  .sidebar:not(.collapsed) {
+    width: 278px;
+    inset: 12px auto 12px 12px;
+    height: calc(100vh - 24px);
+    padding: 12px;
+    border: 1px solid rgba(181, 225, 255, .82);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 15% 2%, rgba(115, 153, 255, .52), transparent 26%),
+      radial-gradient(circle at 86% 96%, rgba(225, 102, 255, .42), transparent 28%),
+      linear-gradient(165deg, rgba(72, 98, 178, .95), rgba(28, 51, 112, .96) 48%, rgba(80, 75, 166, .94));
+    box-shadow: 0 0 0 2px rgba(121, 176, 255, .15), 0 0 34px rgba(92, 166, 255, .42), 0 0 72px rgba(174, 93, 255, .22), inset 0 1px rgba(255,255,255,.4);
+    overflow: hidden;
+  }
+
+  .sidebar:not(.collapsed)::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, rgba(255,255,255,.12), transparent 34%, rgba(101,211,255,.08) 66%, rgba(255,139,245,.12));
+  }
+
+  .sidebar:not(.collapsed) .brand {
+    position: relative;
+    z-index: 1;
+    height: 62px;
+    padding: 8px 10px;
+    gap: 12px;
+    border: 1px solid rgba(210, 230, 255, .2);
+    border-radius: 15px;
+    background: linear-gradient(100deg, rgba(255,255,255,.09), rgba(255,255,255,.025));
+    box-shadow: inset 0 1px rgba(255,255,255,.14);
+  }
+
+  .sidebar:not(.collapsed) .brand-mark {
+    min-width: 42px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(145deg, #748eff, #6265e9);
+    box-shadow: 0 0 18px rgba(121,152,255,.75), inset 0 1px rgba(255,255,255,.4);
+  }
+
+  .sidebar:not(.collapsed) .brand b { font-size: 16px; text-shadow: 0 2px 8px rgba(0,0,0,.24); }
+  .sidebar:not(.collapsed) .brand small { margin-top: 3px; color: rgba(238,245,255,.7); }
+
+  .sidebar:not(.collapsed) .sidebar-profile {
+    position: relative;
+    z-index: 1;
+    margin: 10px 0 8px;
+    min-height: 57px;
+    padding: 9px 11px;
+    border-color: rgba(215,232,255,.25);
+    border-radius: 14px;
+    background: linear-gradient(105deg, rgba(255,255,255,.14), rgba(255,255,255,.055));
+    box-shadow: inset 0 1px rgba(255,255,255,.16), 0 9px 20px rgba(8,20,65,.14);
+  }
+
+  .sidebar:not(.collapsed) .sidebar-profile > span {
+    width: 39px;
+    height: 39px;
+    flex-basis: 39px;
+    background: linear-gradient(145deg,#888eff,#b36dff);
+    box-shadow: 0 0 18px rgba(174,115,255,.55);
+  }
+
+  .sidebar:not(.collapsed) .sidebar-profile i { top: 12px; right: 12px; width: 9px; height: 9px; border-color: #4160b4; box-shadow: 0 0 12px #36ff9a; }
+  .sidebar:not(.collapsed) nav { position: relative; z-index: 1; padding: 0; scrollbar-width: thin; scrollbar-color: rgba(177,207,255,.35) transparent; }
+  .sidebar:not(.collapsed) .nav-section-label { margin: 2px 8px 5px; color: rgba(235,244,255,.67); font-size: 10px; letter-spacing: .05em; text-transform: none; }
+
+  .sidebar:not(.collapsed) .nav-item {
+    min-height: 37px;
+    height: 37px;
+    margin: 4px 0;
+    padding: 0 12px;
+    gap: 12px;
+    border: 1px solid rgba(214, 231, 255, .18);
+    border-radius: 12px;
+    color: rgba(246,249,255,.9);
+    background: linear-gradient(100deg, rgba(255,255,255,.105), rgba(255,255,255,.035));
+    box-shadow: inset 0 1px rgba(255,255,255,.1), 0 7px 16px rgba(5,17,60,.09);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .sidebar:not(.collapsed) .nav-item:hover {
+    transform: none;
+    border-color: rgba(177,216,255,.48);
+    background: linear-gradient(100deg, rgba(148,187,255,.22), rgba(175,113,255,.14));
+  }
+
+  .sidebar:not(.collapsed) .nav-item.active {
+    color: #fff;
+    border-color: rgba(175,225,255,.68);
+    background: linear-gradient(100deg, rgba(118,130,255,.42), rgba(91,209,255,.27));
+    box-shadow: 0 0 15px rgba(101,203,255,.42), inset 0 0 14px rgba(191,138,255,.26), inset 0 1px rgba(255,255,255,.34);
+  }
+
+  .sidebar:not(.collapsed) .nav-item.active svg { color: #fff; }
+  .sidebar:not(.collapsed) .nav-item.active::before { display: none; }
+  .sidebar:not(.collapsed) .nav-group { margin: 4px 0; border: 1px solid transparent; border-radius: 14px; }
+  .sidebar:not(.collapsed) .nav-group.open {
+    padding: 0 0 7px;
+    border-color: rgba(216,230,255,.14);
+    background: linear-gradient(155deg, rgba(255,255,255,.065), rgba(104,91,210,.1));
+    box-shadow: inset 0 1px rgba(255,255,255,.08), 0 9px 20px rgba(4,14,52,.1);
+  }
+  .sidebar:not(.collapsed) .nav-group .nav-item { margin: 0; }
+  .sidebar:not(.collapsed) .nav-group.open .nav-item { border-color: rgba(216,230,255,.2); background: rgba(255,255,255,.07); }
+  .sidebar:not(.collapsed) .nav-button .rot { transform: rotate(180deg); }
+  .sidebar:not(.collapsed) .subnav { margin: 5px 8px 0 31px; padding: 0 0 0 12px; border-left-color: rgba(213,228,255,.22); }
+  .sidebar:not(.collapsed) .subnav a {
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    margin: 1px 0;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: rgba(245,248,255,.83);
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .sidebar:not(.collapsed) .subnav a:hover { background: rgba(151,173,255,.16); }
+  .sidebar:not(.collapsed) .subnav a.active {
+    color: #fff;
+    border-color: rgba(162,229,255,.92);
+    background: linear-gradient(100deg, rgba(170,102,255,.46), rgba(75,218,255,.36));
+    box-shadow: 0 0 13px rgba(85,220,255,.72), 0 0 22px rgba(196,87,255,.35), inset 0 1px rgba(255,255,255,.38);
+  }
+  .sidebar:not(.collapsed) .nav-section-secondary { margin-top: 10px; padding-top: 10px; }
+  .sidebar:not(.collapsed) .logout {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-height: 42px;
+    margin: 9px 0 0;
+    color: #ff8f9c;
+    border-color: rgba(255,184,213,.22);
+    background: linear-gradient(100deg, rgba(255,105,145,.12), rgba(224,112,255,.2));
+    box-shadow: 0 0 18px rgba(232,101,255,.16), inset 0 1px rgba(255,255,255,.1);
+  }
+  .sidebar:not(.collapsed) .sidebar-edge-toggle { right: -15px; top: 88px; }
+  .sidebar:not(.collapsed) + .main-wrap { margin-left: 302px; width: calc(100% - 302px); }
+
   .login-page {
     min-height: 100svh;
     grid-template-columns: minmax(720px, 1.35fr) minmax(480px, .65fr);
@@ -188,3 +335,4 @@ textarea { font-family: var(--csp-font); }
 @media (prefers-reduced-motion: reduce) {
   .login-card .login-btn { transition: none; }
 }
+
