@@ -1,4 +1,3 @@
-Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' provider failed.
 import {useEffect,useState} from 'react';
 import {NavLink,useLocation,useNavigate,Outlet} from 'react-router-dom';
 import {LayoutDashboard,Warehouse,PackagePlus,PackageMinus,ArrowRightLeft,ChartNoAxesCombined,Settings,LogOut,Menu,Bell,ChevronDown,ChevronLeft,ChevronRight,FileClock,ListChecks,MapPinned,Thermometer,ClipboardCheck,CalendarRange,Moon,Sun,FilePenLine} from 'lucide-react';
