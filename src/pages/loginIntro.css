@@ -63,6 +63,22 @@
   outline-offset: 3px;
 }
 
+.login-intro-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  padding: 24px;
+  color: #fff;
+  text-align: center;
+  background: radial-gradient(circle at 50% 45%, rgba(13,35,80,.32), rgba(3,10,29,.88));
+}
+
+.login-intro-fallback strong { font-size: clamp(24px,4vw,52px); }
+.login-intro-fallback span { color: rgba(255,255,255,.72); }
+
 .login-intro-progress {
   position: absolute;
   left: 0;
