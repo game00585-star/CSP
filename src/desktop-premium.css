@@ -1,0 +1,188 @@
+/* CSP desktop presentation layer.
+   This file intentionally contains presentation-only overrides and is loaded last. */
+:root {
+  --csp-font: "Noto Sans Thai", "IBM Plex Sans Thai", "Leelawadee UI", "Segoe UI", sans-serif;
+  --csp-navy-950: #030a1d;
+  --csp-navy-900: #06142f;
+  --csp-navy-850: #081b3d;
+  --csp-navy-800: #0b234c;
+  --csp-gold: #ffd20a;
+  --csp-gold-bright: #ffe45a;
+  --csp-blue-line: #245789;
+  --csp-text: #f8fafc;
+  --csp-muted: #9fb2d2;
+  font-family: var(--csp-font);
+}
+
+body,
+button,
+input,
+select,
+textarea { font-family: var(--csp-font); }
+
+@media (min-width: 981px) {
+  .login-page {
+    min-height: 100svh;
+    grid-template-columns: minmax(720px, 1.35fr) minmax(480px, .65fr);
+    overflow: hidden;
+    background: var(--csp-navy-950);
+  }
+
+  .login-visual {
+    min-height: 100svh;
+    padding: 0;
+    background-position: center center;
+    border-right: 1px solid rgba(255, 210, 10, .18);
+  }
+
+  .login-visual::after {
+    background:
+      linear-gradient(90deg, rgba(3, 10, 29, .80) 0%, rgba(3, 10, 29, .34) 48%, rgba(3, 10, 29, .04) 76%),
+      linear-gradient(180deg, rgba(3, 10, 29, .06) 48%, rgba(3, 10, 29, .36) 100%);
+  }
+
+  .login-visual .visual-content {
+    left: clamp(44px, 5.2vw, 92px);
+    top: clamp(48px, 7vh, 86px);
+    right: auto;
+    width: min(520px, 46vw);
+    max-width: 520px;
+  }
+
+  .visual-brand { margin-bottom: clamp(34px, 4vh, 52px); }
+  .visual-brand > div:last-child b { font-size: 34px; letter-spacing: .02em; }
+  .visual-brand > div:last-child span { font-size: 13px; }
+
+  .login-visual .visual-content .eyebrow {
+    margin-bottom: 14px;
+    color: rgba(255,255,255,.78) !important;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .login-visual .visual-content h1 {
+    margin: 0 0 18px;
+    max-width: 520px;
+    font-size: clamp(48px, 4vw, 70px);
+    line-height: 1.06;
+    letter-spacing: -.05em;
+    text-shadow: 0 8px 32px rgba(0,0,0,.48);
+  }
+
+  .login-visual .visual-content > p:not(.eyebrow) {
+    max-width: 460px;
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .login-visual .visual-stats {
+    width: min(410px, 90%);
+    margin-top: 34px;
+    padding-top: 20px;
+    gap: 52px;
+    border-color: rgba(255,255,255,.2);
+  }
+
+  .login-form-wrap {
+    min-width: 0;
+    padding: clamp(34px, 4vw, 68px);
+    background: rgba(3, 10, 29, .88) !important;
+    backdrop-filter: blur(20px);
+  }
+
+  .login-form-wrap::before {
+    inset: 24px;
+    border-color: rgba(80, 130, 205, .16);
+    border-radius: 24px;
+  }
+
+  .login-card {
+    width: min(440px, 100%);
+    max-width: 440px;
+    padding: 40px;
+    border: 1px solid rgba(255, 210, 10, .34);
+    border-radius: 22px;
+    background: rgba(8, 20, 47, .88);
+    box-shadow: 0 32px 90px rgba(0,0,0,.46), inset 0 1px rgba(255,255,255,.08);
+  }
+
+  .login-card h2 { margin-bottom: 8px; font-size: 30px; line-height: 1.25; }
+  .login-card > p { margin-bottom: 28px; color: var(--csp-muted); }
+  .login-card > label { margin-top: 18px; color: #e9eff9; font-size: 12px; }
+  .login-card .input-icon { margin-top: 8px; }
+  .login-card .input-icon input {
+    height: 48px;
+    border-color: rgba(126, 160, 211, .34);
+    border-radius: 10px;
+    background: rgba(3, 11, 29, .68);
+  }
+  .login-card .input-icon input:hover { border-color: rgba(255,210,10,.46); }
+  .login-card .input-icon input:focus { border-color: var(--csp-gold); outline: 0; box-shadow: 0 0 0 4px rgba(255,210,10,.12); }
+  .login-card .remember { margin: 18px 0 24px; }
+  .login-card .remember input { accent-color: var(--csp-gold); }
+  .login-card .login-btn {
+    height: 50px;
+    border-radius: 10px;
+    background: var(--csp-gold) !important;
+    box-shadow: 0 14px 34px rgba(255, 210, 10, .2) !important;
+    font-size: 15px;
+    transition: transform .3s cubic-bezier(.22,1,.36,1), background-color .3s cubic-bezier(.22,1,.36,1);
+  }
+  .login-card .login-btn:hover:not(:disabled) { transform: translateY(-2px); background: var(--csp-gold-bright) !important; }
+  .login-card .secure { margin-top: 20px; color: #7f93b4; }
+}
+
+@media (min-width: 1181px) {
+  .storage25-shell {
+    margin: 0 0 24px;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .storage25-heading {
+    min-height: 92px;
+    padding: 18px 22px;
+  }
+
+  .storage25-heading h2 { font-size: 26px; line-height: 34px; }
+
+  .storage25-toolbar {
+    grid-template-columns: 210px 190px minmax(360px, 1fr) auto;
+    margin: 12px 18px;
+  }
+
+  .storage25-content {
+    grid-template-columns: minmax(760px, 4.9fr) minmax(300px, 1.35fr);
+    gap: 14px;
+    padding: 0 18px 14px;
+  }
+
+  .storage25-stage-card,
+  .storage25-navigator { border-radius: 14px; }
+
+  .storage25-stage-title { height: 46px; padding: 0 18px; }
+  .storage25-content:not(.rack-view) .storage25-viewport,
+  .storage25-content.rack-view .storage25-viewport { aspect-ratio: 16 / 9; }
+
+  .storage25-scene-transform img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .storage25-navigator { padding: 18px; }
+  .storage25-warehouse-list button { min-height: 58px; }
+  .storage25-location-list { max-height: min(390px, 43vh); }
+  .storage25-journey { margin: 0 18px 18px; padding: 10px 14px; }
+}
+
+@media (min-width: 1600px) {
+  .login-page { grid-template-columns: minmax(880px, 1.42fr) minmax(520px, .58fr); }
+  .login-visual .visual-content { left: 7vw; }
+  .storage25-content { grid-template-columns: minmax(940px, 5.2fr) minmax(320px, 1.3fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card .login-btn { transition: none; }
+}
