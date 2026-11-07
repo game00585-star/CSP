@@ -413,6 +413,14 @@
 @media(prefers-reduced-motion:reduce){.storage25-strip-card{animation:none;transition:none}}
 
 /* Scroll driven FLIP handoff: each top card flies into its measured navigator slot. */
+.storage25-shell{overflow:clip}
+.storage25-content{align-items:start}
+.storage25-navigator{
+  position:sticky;
+  top:clamp(88px,14vh,144px);
+  align-self:start;
+  max-height:calc(100vh - 112px);
+}
 .storage25-facility-strip{
   position:relative;
   z-index:12;
@@ -446,6 +454,8 @@
 .storage25-shell.is-selector-docked .storage25-facility-strip{pointer-events:none;opacity:0}
 
 @media(max-width:900px){
+  .storage25-shell{overflow:hidden}
+  .storage25-navigator{position:static;max-height:none}
   .storage25-facility-strip{height:auto;margin:8px 12px;padding:6px;opacity:1;transform:none;overflow:visible}
   .storage25-strip-list{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}
   .storage25-strip-card{min-width:190px;opacity:1;transform:none!important;scroll-snap-align:start}
