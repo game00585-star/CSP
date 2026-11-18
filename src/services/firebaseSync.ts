@@ -8,6 +8,7 @@ const base = `https://firestore.googleapis.com/v1/projects/${projectId}/database
 // ใช้ collection ใหม่แบบประหยัด: 1 ตารางถูกบีบเป็นเอกสารไม่กี่ก้อน
 // แทนแบบเดิมที่สินค้า 1,885 รายการ = 1,885 documents
 const chunkCollection = 'auditStockChunks';
+const comparisonDocumentId=(sessionId:number)=>`comparison__${sessionId}`;
 
 // ไม่ sync exportRecords เพราะมีไฟล์ Excel แบบ ArrayBuffer ใหญ่ กิน quota เร็วมาก
 // Export ยังใช้งานในเครื่องได้ตามปกติ และกด Export ใหม่จากฐานกลางได้
@@ -19,6 +20,7 @@ const tableNames = [
   'countSessions',
   'countSessionItems',
   'countTransactions',
+  'damagedCounts',
   'movementDrafts',
   'auditUsers'
 ] as const;
@@ -36,11 +38,17 @@ type ChunkDocument = {
 
 // Firestore limits strings by UTF-8 bytes; Thai characters can use three bytes.
 const maxPayloadBytes = 700_000;
-const pendingStorageKey = 'audit-stock-pending-sync-v1';
+// v2 intentionally drops stale pending-table flags created by the old
+// merge-only synchronizer. Those flags could make a second device skip the
+// valid cloud snapshot forever even though Firebase already had the session.
+const legacyPendingStorageKey = 'audit-stock-pending-sync-v1';
+const pendingStorageKey = 'audit-stock-pending-sync-v2';
+localStorage.removeItem(legacyPendingStorageKey);
 let activeSync: Promise<void> | undefined;
 let queuedTimer: number | undefined;
 let onlineListenerInstalled = false;
 let blockedUntil = 0;
+const comparisonTimers=new Map<number,number>();
 const dirtyTables = new Set<TableName>(loadPendingTables());
 
 function isTableName(value: string): value is TableName {
@@ -168,38 +176,33 @@ async function pullFirestoreToLocal() {
   }
 
   for (const [tableName, tableChunks] of byTable) {
+    // A pending local change is authoritative. Pulling the old cloud snapshot
+    // first would resurrect rows that were just deleted before a refresh.
+    if (dirtyTables.has(tableName)) continue;
     const records = tableChunks
       .sort((a, b) => Number(a.fields?.chunkIndex?.integerValue || 0) - Number(b.fields?.chunkIndex?.integerValue || 0))
       .flatMap(document => deserialize(document.fields?.payload?.stringValue || '[]'));
 
-    // Never clear local data during refresh. Firebase can be behind this device
-    // (for example when the page is refreshed before a queued upload finishes).
-    // Merge missing remote rows and only replace a local row when the remote row
-    // has a newer updatedAt value. This keeps offline/local counts from vanishing.
+    // Cloud chunks are a complete table snapshot. Since dirty local tables were
+    // skipped above, replacing this clean table is safe and also propagates
+    // deletions to other devices. A merge-only pull cannot remove a remote delete.
     const table = db.table(tableName);
     const remoteRecords=(records as Array<Record<string,unknown>>).filter(record=>{
       const keyPath=table.schema.primKey.keyPath;
       const key=typeof keyPath==='string'?record[keyPath]:undefined;
       return typeof key==='string'||typeof key==='number';
     });
-    const keyPath=table.schema.primKey.keyPath as string;
-    const keys=remoteRecords.map(record=>record[keyPath] as string|number);
-    const locals=await table.bulkGet(keys) as Array<Record<string,unknown>|undefined>;
-    const toPut=remoteRecords.filter((record,index)=>{
-      const local=locals[index];
-      if(!local)return true;
-      const remoteUpdated=record.updatedAt?+new Date(record.updatedAt as string|Date):0;
-      const localUpdated=local.updatedAt?+new Date(local.updatedAt as string|Date):0;
-      return !!remoteUpdated&&remoteUpdated>localUpdated;
+    await db.transaction('rw',table,async()=>{
+      await table.clear();
+      if(remoteRecords.length)await table.bulkPut(remoteRecords);
     });
-    if(toPut.length)await table.bulkPut(toPut);
   }
 }
 
 async function pushTablesToFirestore(tables: Iterable<TableName>) {
   if (!navigator.onLine) throw new Error('Offline');
 
-  const priority:TableName[]=['countTransactions','countSessionItems','countSessions','products','allowanceImports','movementImports','movementItems','movementDrafts','auditUsers'];
+  const priority:TableName[]=['damagedCounts','countTransactions','countSessionItems','countSessions','products','allowanceImports','movementImports','movementItems','movementDrafts','auditUsers'];
   const requested=new Set(tables);
   const tableList = priority.filter(table=>requested.has(table));
   if (!tableList.length) return;
@@ -296,8 +299,16 @@ export async function refreshFromFirestore() {
 
 // เก็บชื่อ function เดิมไว้ให้ repository เรียกได้
 // โหมดประหยัดใช้การ upload chunk ทั้งตารางแทนการลบเอกสารรายตัว
-export async function deleteFirestoreRows(_rows: Array<{table: string; key: unknown}>) {
-  return;
+export async function deleteFirestoreRows(rows: Array<{table: string; key: unknown}>) {
+  const affected = new Set<TableName>();
+  rows.forEach(({table}) => {if (isTableName(table)) affected.add(table);});
+  affected.forEach(table => dirtyTables.add(table));
+  persistPendingTables();
+  if (!navigator.onLine || !affected.size) return;
+  if (activeSync) await activeSync;
+  affected.forEach(table => dirtyTables.add(table));
+  persistPendingTables();
+  await syncAllToFirestore();
 }
 
 export async function initializeCloudData() {
@@ -321,4 +332,34 @@ export async function initializeCloudData() {
   } catch (error) {
     console.error('Firebase sync unavailable; continuing with local data.', error);
   }
+}
+
+// Cost-efficient comparison storage: one compact document per count session.
+// The Excel file and repeated product metadata are never uploaded.
+export async function loadCountComparisonCloud(sessionId:number){
+  try{
+    const document=await request(`${base}/${chunkCollection}/${comparisonDocumentId(sessionId)}`) as {fields?:{payload?:{stringValue?:string}}};
+    return document.fields?.payload?.stringValue;
+  }catch(error){
+    if(error instanceof Error&&error.message.startsWith('Firebase 404:'))return undefined;
+    throw error;
+  }
+}
+
+export function queueCountComparisonCloudSave(sessionId:number,payload:string,delay=2500){
+  const current=comparisonTimers.get(sessionId);if(current)window.clearTimeout(current);
+  comparisonTimers.set(sessionId,window.setTimeout(()=>{
+    comparisonTimers.delete(sessionId);
+    if(!navigator.onLine)return;
+    void request(`${base}/${chunkCollection}/${comparisonDocumentId(sessionId)}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{table:{stringValue:'countComparison'},sessionId:{integerValue:String(sessionId)},payload:{stringValue:payload},updatedAt:{timestampValue:new Date().toISOString()}}})
+    }).catch(error=>console.error('Firebase comparison sync failed; local copy remains available.',error));
+  },delay));
+}
+
+export async function deleteCountComparisonCloud(sessionId:number){
+  const current=comparisonTimers.get(sessionId);if(current)window.clearTimeout(current);
+  comparisonTimers.delete(sessionId);
+  try{await request(`${base}/${chunkCollection}/${comparisonDocumentId(sessionId)}`,{method:'DELETE'})}
+  catch(error){if(!(error instanceof Error&&error.message.startsWith('Firebase 404:')))throw error}
 }

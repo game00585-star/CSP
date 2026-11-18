@@ -1,28 +1,36 @@
 import {db} from '../db/database';
-import type {CountSession,CountTransaction,ParsedMovement,ParsedProduct} from '../types';
-import {createSessionNumber} from '../utils/stock';
+import type {CountSession,CountTransaction,ParsedMovement,ParsedProduct,ProductMasterRow} from '../types';
+import {createSessionNumber,enrichAllowanceWithProductMaster} from '../utils/stock';
 import {deleteFirestoreRows, queueFirestoreSync} from './firebaseSync';
 import {getCurrentUser,verifyHistoryDeleteCredentials} from './authService';
 
 async function deleteSessionData(sessionId:number){
   const itemKeys=await db.countSessionItems.where('sessionId').equals(sessionId).primaryKeys();
   const transactionKeys=await db.countTransactions.where('sessionId').equals(sessionId).primaryKeys();
+  const damagedKeys=await db.damagedCounts.where('sessionId').equals(sessionId).primaryKeys();
   const exportKeys=await db.exportRecords.where('sessionId').equals(sessionId).primaryKeys();
-  await db.transaction('rw',db.countSessions,db.countSessionItems,db.countTransactions,db.exportRecords,async()=>{await db.countSessionItems.where('sessionId').equals(sessionId).delete();await db.countTransactions.where('sessionId').equals(sessionId).delete();await db.exportRecords.where('sessionId').equals(sessionId).delete();await db.countSessions.delete(sessionId);});
+  await db.transaction('rw',[db.countSessions,db.countSessionItems,db.countTransactions,db.damagedCounts,db.exportRecords],async()=>{await db.countSessionItems.where('sessionId').equals(sessionId).delete();await db.countTransactions.where('sessionId').equals(sessionId).delete();await db.damagedCounts.where('sessionId').equals(sessionId).delete();await db.exportRecords.where('sessionId').equals(sessionId).delete();await db.countSessions.delete(sessionId);});
   await deleteFirestoreRows([
     {table:'countSessions',key:sessionId},
     ...itemKeys.map(key=>({table:'countSessionItems',key})),
     ...transactionKeys.map(key=>({table:'countTransactions',key})),
+    ...damagedKeys.map(key=>({table:'damagedCounts',key})),
     ...exportKeys.map(key=>({table:'exportRecords',key}))
   ]);
-  queueFirestoreSync(['countSessions','countSessionItems','countTransactions']);
+  queueFirestoreSync(['countSessions','countSessionItems','countTransactions','damagedCounts']);
 }
 
 export const auditRepository={
+  async applyProductMaster(masterRows:ProductMasterRow[]){
+    const products=await db.products.toArray(),now=new Date(),source:ParsedProduct[]=products.map((product,index)=>({row:index+2,productCode:product.productCode,productName:product.productName,unit:product.unit,categoryCode:product.categoryCode,categoryName:product.categoryName,barcode:product.barcode,unitPrice:product.unitPrice})),matched=enrichAllowanceWithProductMaster(source,masterRows).filter(row=>row.masterMatched),oldByCode=new Map(products.map(product=>[product.productCode,product]));
+    if(matched.length)await db.products.bulkPut(matched.map(row=>({...oldByCode.get(row.productCode)!,barcode:row.barcode,unitPrice:row.unitPrice,updatedAt:now})));
+    if(matched.length)queueFirestoreSync(['products']);
+    return matched.length;
+  },
   async saveAllowance(fileName:string,rows:ParsedProduct[],by='ผู้ใช้งาน'){
     const now=new Date(),valid=rows.filter(r=>r.status==='insert'||r.status==='update');
     await db.transaction('rw',db.products,db.allowanceImports,async()=>{
-      await db.products.bulkPut(valid.map(r=>({productCode:r.productCode,productName:r.productName,unit:r.unit,categoryCode:r.categoryCode,categoryName:r.categoryName,isActive:true,createdAt:now,updatedAt:now})));
+      await db.products.bulkPut(valid.map(r=>({productCode:r.productCode,productName:r.productName,unit:r.unit,categoryCode:r.categoryCode,categoryName:r.categoryName,barcode:r.barcode,unitPrice:r.unitPrice,isActive:true,createdAt:now,updatedAt:now})));
       await db.allowanceImports.add({fileName,totalRows:rows.length,insertedCount:rows.filter(r=>r.status==='insert').length,updatedCount:rows.filter(r=>r.status==='update').length,skippedCount:rows.filter(r=>r.status==='skip').length,duplicateCount:rows.filter(r=>r.status==='duplicate').length,invalidCount:rows.filter(r=>r.status==='invalid').length,importedAt:now,importedBy:by});
     });
     queueFirestoreSync(['products','allowanceImports']);
@@ -33,7 +41,12 @@ export const auditRepository={
       await db.products.clear();
       await db.allowanceImports.clear();
     });
-    queueFirestoreSync(['products','allowanceImports']);
+    await deleteFirestoreRows([{table:'products',key:'*'},{table:'allowanceImports',key:'*'}]);
+  },
+  async deleteAllowanceImport(importId:number){
+    if(getCurrentUser()?.role!=='ADMIN')throw new Error('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่ลบประวัติ Import ได้');
+    await db.allowanceImports.delete(importId);
+    await deleteFirestoreRows([{table:'allowanceImports',key:importId}]);
   },
   async createSession(data:Pick<CountSession,'branchName'|'countDate'|'auditorName'|'note'>):Promise<number>{
     const now=new Date(),today=await db.countSessions.filter(s=>new Date(s.createdAt).toDateString()===now.toDateString()).count();
@@ -57,7 +70,9 @@ export const auditRepository={
   async useAllowanceForSession(sessionId:number,productCount:number){
     const session=await db.countSessions.get(sessionId);
     if(!session)throw new Error('ไม่พบรอบนับที่ต้องการ');
-    const transactionCount=await db.countTransactions.where('sessionId').equals(sessionId).count();
+    // Existing count transactions remain valid when switching to the shared
+    // Allowance list, so selecting Allowance must not be blocked after counting.
+    const transactionCount=0;
     if(transactionCount>0&&session.itemSource!=='ALLOWANCE')throw new Error('รอบนี้เริ่มนับแล้ว จึงไม่สามารถเปลี่ยนแหล่งรายการสินค้าได้');
     const now=new Date();
     const oldItemKeys=await db.countSessionItems.where('sessionId').equals(sessionId).primaryKeys();
