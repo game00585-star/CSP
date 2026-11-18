@@ -29,4 +29,3 @@ export default function Layout(){
     {!locked&&<nav className="mobile-bottom-nav" aria-label="เมนูหลักบนมือถือ"><NavLink to="/dashboard"><LayoutDashboard/><span>หน้าหลัก</span></NavLink><NavLink to="/reports"><ChartNoAxesCombined/><span>รายการ</span></NavLink><NavLink to="/warehouse-map/all"><MapPinned/><span>คลัง</span></NavLink><NavLink to="/settings"><Settings/><span>ตั้งค่า</span></NavLink></nav>}{toast&&<div className="toast">✓ {toast}</div>}
   </div>;
 }
-
